@@ -1,0 +1,220 @@
+{
+  "name": "UV Lock",
+  "scopeName": "source.uvlock",
+  "fileTypes": ["lock"],
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#tables"
+    },
+    {
+      "include": "#package_name"
+    },
+    {
+      "include": "#version"
+    },
+    {
+      "include": "#key_value"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "match": "(#).*$\\n?",
+      "name": "comment.line.number-sign.uvlock",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.comment.uvlock"
+        }
+      }
+    },
+    "tables": {
+      "match": "^\\s*(\\[)([^\\]]*)(\\])\\s*",
+      "name": "meta.tag.table.uvlock",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.table.uvlock"
+        },
+        "2": {
+          "name": "entity.name.tag.table.uvlock"
+        },
+        "3": {
+          "name": "punctuation.definition.table.uvlock"
+        }
+      }
+    },
+    "package_name": {
+      "match": "^\\s*(name)\\s*(=)\\s*\"([^\"]+)\"",
+      "captures": {
+        "1": {
+          "name": "variable.other.key.uvlock"
+        },
+        "2": {
+          "name": "keyword.operator.assignment.uvlock"
+        },
+        "3": {
+          "name": "entity.name.class.uvlock"
+        }
+      }
+    },
+    "version": {
+      "match": "^\\s*(version)\\s*(=)\\s*\"([^\"]+)\"",
+      "captures": {
+        "1": {
+          "name": "variable.other.key.uvlock"
+        },
+        "2": {
+          "name": "keyword.operator.assignment.uvlock"
+        },
+        "3": {
+          "name": "constant.numeric.version.uvlock"
+        }
+      }
+    },
+    "key_value": {
+      "begin": "([A-Za-z0-9_-]+)\\s*(=)\\s*",
+      "beginCaptures": {
+        "1": {
+          "name": "variable.other.key.uvlock"
+        },
+        "2": {
+          "name": "keyword.operator.assignment.uvlock"
+        }
+      },
+      "end": "(?=$|\\n)",
+      "patterns": [
+        {
+          "include": "#string"
+        },
+        {
+          "include": "#number"
+        },
+        {
+          "include": "#boolean"
+        },
+        {
+          "include": "#array"
+        },
+        {
+          "include": "#inline_table"
+        },
+        {
+          "include": "#date"
+        }
+      ]
+    },
+    "string": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.uvlock",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.uvlock",
+              "match": "\\\\[btnfr\"\\\\]|\\\\u[0-9A-Fa-f]{4}|\\\\U[0-9A-Fa-f]{8}"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.uvlock",
+          "begin": "'",
+          "end": "'"
+        }
+      ]
+    },
+    "number": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.uvlock",
+          "match": "[-+]?(?:0|[1-9])(?:[0-9_])*(?:\\.[0-9_]+)?(?:[eE][-+]?[0-9_]+)?"
+        },
+        {
+          "name": "constant.numeric.integer.uvlock",
+          "match": "[-+]?(?:0|[1-9])(?:[0-9_])*"
+        }
+      ]
+    },
+    "boolean": {
+      "name": "constant.language.boolean.uvlock",
+      "match": "\\b(?:true|false)\\b"
+    },
+    "array": {
+      "name": "meta.structure.array.uvlock",
+      "begin": "\\[",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.array.begin.uvlock"
+        }
+      },
+      "end": "\\]",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.array.end.uvlock"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#string"
+        },
+        {
+          "include": "#number"
+        },
+        {
+          "include": "#boolean"
+        },
+        {
+          "include": "#array"
+        },
+        {
+          "include": "#inline_table"
+        }
+      ]
+    },
+    "inline_table": {
+      "name": "meta.structure.inline-table.uvlock",
+      "begin": "\\{",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.inline-table.begin.uvlock"
+        }
+      },
+      "end": "\\}",
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.inline-table.end.uvlock"
+        }
+      },
+      "patterns": [
+        {
+          "match": "([A-Za-z0-9_-]+)\\s*(=)",
+          "captures": {
+            "1": {
+              "name": "variable.other.key.uvlock"
+            },
+            "2": {
+              "name": "keyword.operator.assignment.uvlock"
+            }
+          }
+        },
+        {
+          "include": "#string"
+        },
+        {
+          "include": "#number"
+        },
+        {
+          "include": "#boolean"
+        },
+        {
+          "include": "#array"
+        }
+      ]
+    },
+    "date": {
+      "name": "constant.other.date.uvlock",
+      "match": "\\d{4}-\\d{2}-\\d{2}(?:[T ]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[-+]\\d{2}:\\d{2})?)?"
+    }
+  }
+}

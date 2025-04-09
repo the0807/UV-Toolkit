@@ -1,0 +1,260 @@
+{
+  "name": "uv-toolkit",
+  "displayName": "UV Toolkit",
+  "description": "Enhance your Python development experience with uv - the fast Python package manager. Provides syntax highlighting, package links, command integration, and more.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "icon": "logo.png",
+  "author": {
+    "name": "Eom, TaeHyun",
+    "email": "the0807.eom@gmail.com",
+    "url": "https://github.com/the0807"
+  },
+  "repository": {
+    "url": "https://github.com/the0807/UV-Toolkit",
+    "type": "github"
+  },
+  "publisher": "the0807",
+  "categories": [
+    "Programming Languages",
+    "Data Science",
+    "Snippets",
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:pyproject-toml",
+    "onLanguage:python",
+    "onLanguage:uvlock",
+    "onCommand:uv.init",
+    "onCommand:uv.sync",
+    "onCommand:uv.upgrade",
+    "onCommand:uv.cache.clean",
+    "onCommand:uv.removePackage",
+    "onCommand:uv.searchPackage",
+    "onCommand:uv.generateLock",
+    "onCommand:uv.upgradeDependencies",
+    "onCommand:uv.manageVirtualEnv",
+    "onCommand:uv.runScript",
+    "onCommand:uv.addScriptDependency",
+    "onCommand:uv.installPython",
+    "onCommand:uv.pinPython",
+    "onCommand:uv.installTool",
+    "onCommand:uv.runTool",
+    "onCommand:uv.add"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "uvlock",
+        "extensions": [".lock"],
+        "filenames": ["uv.lock"],
+        "aliases": ["UV Lock", "uv.lock"]
+      },
+      {
+        "id": "pyproject-toml",
+        "extensions": [".toml"],
+        "filenames": ["pyproject.toml"],
+        "aliases": ["PyProject TOML", "pyproject.toml"]
+      }
+    ],
+    "grammars": [
+      {
+        "language": "pyproject-toml",
+        "scopeName": "source.toml.enhanced",
+        "path": "./syntaxes/toml.tmLanguage.json"
+      },
+      {
+        "language": "uvlock",
+        "scopeName": "source.uvlock",
+        "path": "./syntaxes/uvlock.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "uv.init",
+        "title": "UV: Initialize Project"
+      },
+      {
+        "command": "uv.sync",
+        "title": "UV: Sync Dependencies"
+      },
+      {
+        "command": "uv.upgrade",
+        "title": "UV: Upgrade Packages"
+      },
+      {
+        "command": "uv.cache.clean",
+        "title": "UV: Clean Cache"
+      },
+      {
+        "command": "uv.removePackage",
+        "title": "UV: Remove Package from pyproject.toml"
+      },
+      {
+        "command": "uv.searchPackage",
+        "title": "UV: Search Package on PyPI"
+      },
+      {
+        "command": "uv.generateLock",
+        "title": "UV: Generate Lock File"
+      },
+      {
+        "command": "uv.upgradeDependencies",
+        "title": "UV: Upgrade Dependencies"
+      },
+      {
+        "command": "uv.manageVirtualEnv",
+        "title": "UV: Create Virtual Environment"
+      },
+      {
+        "command": "uv.runScript",
+        "title": "UV: Run Python Script"
+      },
+      {
+        "command": "uv.addScriptDependency",
+        "title": "UV: Add Script Dependency"
+      },
+      {
+        "command": "uv.installPython",
+        "title": "UV: Install Python Version"
+      },
+      {
+        "command": "uv.pinPython",
+        "title": "UV: Pin Python Version"
+      },
+      {
+        "command": "uv.installTool",
+        "title": "UV: Install Tool"
+      },
+      {
+        "command": "uv.runTool",
+        "title": "UV: Run Tool with UVX"
+      },
+      {
+        "command": "uv.add",
+        "title": "UV: Add Package to Project"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "when": "resourceFilename == pyproject.toml",
+          "command": "uv.add",
+          "group": "uv"
+        },
+        {
+          "when": "resourceFilename == pyproject.toml",
+          "command": "uv.removePackage",
+          "group": "uv"
+        },
+        {
+          "when": "resourceFilename == pyproject.toml",
+          "command": "uv.searchPackage",
+          "group": "uv"
+        },
+        {
+          "when": "resourceFilename == pyproject.toml",
+          "command": "uv.generateLock",
+          "group": "uv"
+        },
+        {
+          "when": "resourceFilename == pyproject.toml",
+          "command": "uv.upgradeDependencies",
+          "group": "uv"
+        }
+      ],
+      "editor/context": [
+        {
+          "when": "resourceFilename == pyproject.toml",
+          "command": "uv.add",
+          "group": "uv"
+        },
+        {
+          "when": "resourceFilename == pyproject.toml",
+          "command": "uv.removePackage",
+          "group": "uv"
+        },
+        {
+          "when": "resourceFilename == pyproject.toml",
+          "command": "uv.searchPackage",
+          "group": "uv"
+        },
+        {
+          "when": "resourceFilename == pyproject.toml",
+          "command": "uv.generateLock",
+          "group": "uv"
+        },
+        {
+          "when": "resourceFilename == pyproject.toml",
+          "command": "uv.upgradeDependencies",
+          "group": "uv"
+        }
+      ],
+      "explorer/context/resource/group": [
+        {
+          "when": "resourceExtname == .py",
+          "command": "uv.runScript",
+          "group": "uv"
+        },
+        {
+          "when": "resourceExtname == .py",
+          "command": "uv.addScriptDependency",
+          "group": "uv"
+        }
+      ],
+      "editor/context/resource": [
+        {
+          "when": "resourceExtname == .py",
+          "command": "uv.runScript",
+          "group": "uv"
+        },
+        {
+          "when": "resourceExtname == .py",
+          "command": "uv.addScriptDependency",
+          "group": "uv"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "uv.init",
+          "group": "uv"
+        },
+        {
+          "command": "uv.installPython",
+          "group": "uv"
+        },
+        {
+          "command": "uv.pinPython",
+          "group": "uv"
+        },
+        {
+          "command": "uv.installTool",
+          "group": "uv"
+        },
+        {
+          "command": "uv.runTool",
+          "group": "uv"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "UV Toolkit"
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "tsc -p ./",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.70.0",
+    "typescript": "^4.7.4",
+    "vscode-test": "^1.6.2"
+  }
+}
