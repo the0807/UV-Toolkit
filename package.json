@@ -2,7 +2,7 @@
   "name": "uv-toolkit",
   "displayName": "UV Toolkit",
   "description": "Enhance your Python development experience with uv - the fast Python package manager. Provides syntax highlighting, package links, command integration, and more.",
-  "version": "0.0.2",
+  "version": "0.1.6",
   "engines": {
     "vscode": "^1.70.0"
   },
@@ -42,22 +42,37 @@
     "onCommand:uv.pinPython",
     "onCommand:uv.installTool",
     "onCommand:uv.runTool",
-    "onCommand:uv.add"
+    "onCommand:uv.add",
+    "onCommand:uv.addDev"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "languages": [
       {
         "id": "uvlock",
-        "extensions": [".lock"],
-        "filenames": ["uv.lock"],
-        "aliases": ["UV Lock", "uv.lock"]
+        "extensions": [
+          ".lock"
+        ],
+        "filenames": [
+          "uv.lock"
+        ],
+        "aliases": [
+          "UV Lock",
+          "uv.lock"
+        ]
       },
       {
         "id": "pyproject-toml",
-        "extensions": [".toml"],
-        "filenames": ["pyproject.toml"],
-        "aliases": ["PyProject TOML", "pyproject.toml"]
+        "extensions": [
+          ".toml"
+        ],
+        "filenames": [
+          "pyproject.toml"
+        ],
+        "aliases": [
+          "PyProject TOML",
+          "pyproject.toml"
+        ]
       }
     ],
     "grammars": [
@@ -136,6 +151,10 @@
       {
         "command": "uv.add",
         "title": "UV: Add Package to Project"
+      },
+      {
+        "command": "uv.addDev",
+        "title": "UV: Add Dev Package to Project"
       }
     ],
     "menus": {
@@ -143,6 +162,11 @@
         {
           "when": "resourceFilename == pyproject.toml",
           "command": "uv.add",
+          "group": "uv"
+        },
+        {
+          "when": "resourceFilename == pyproject.toml",
+          "command": "uv.addDev",
           "group": "uv"
         },
         {
@@ -170,6 +194,11 @@
         {
           "when": "resourceFilename == pyproject.toml",
           "command": "uv.add",
+          "group": "uv"
+        },
+        {
+          "when": "resourceFilename == pyproject.toml",
+          "command": "uv.addDev",
           "group": "uv"
         },
         {
@@ -242,7 +271,346 @@
     },
     "configuration": {
       "title": "UV Toolkit"
-    }
+    },
+    "languageModelTools": [
+      {
+        "name": "init_project",
+        "displayName": "Initialize UV Project",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uv-init",
+        "icon": "$(new-folder)",
+        "userDescription": "Initialize a new Python project with UV package manager",
+        "modelDescription": "Initialize a new Python project using UV package manager. This tool creates a new pyproject.toml file and sets up the project structure. Use when the user wants to start a new Python project or when they mention initializing/creating a new UV project. The tool will prompt for a project name if not provided.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "projectName": {
+              "type": "string",
+              "description": "Name of the project to initialize. If not provided, will use the workspace folder name."
+            }
+          }
+        }
+      },
+      {
+        "name": "sync_dependencies",
+        "displayName": "Sync Dependencies",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uv-sync",
+        "icon": "$(sync)",
+        "userDescription": "Sync project dependencies using UV",
+        "modelDescription": "Synchronize project dependencies based on pyproject.toml or requirements files. Use when the user wants to install or update dependencies, mentions syncing packages, or needs to ensure their environment matches the project requirements. Supports syncing specific groups or from specific files.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "syncType": {
+              "type": "string",
+              "enum": [
+                "basic",
+                "from-file",
+                "groups"
+              ],
+              "description": "Type of sync operation to perform",
+              "default": "basic"
+            },
+            "requirementsFile": {
+              "type": "string",
+              "description": "Path to requirements file (when syncType is 'from-file')"
+            },
+            "groups": {
+              "type": "string",
+              "description": "Comma-separated list of dependency groups to sync (when syncType is 'groups')"
+            }
+          }
+        }
+      },
+      {
+        "name": "add_package",
+        "displayName": "Add Package",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uv-add",
+        "icon": "$(add)",
+        "userDescription": "Add a Python package to the project",
+        "modelDescription": "Add a Python package to the project's dependencies in pyproject.toml. Use when the user wants to install a new package, mentions adding a dependency, or needs to include a specific library in their project. Supports version constraints and extras.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "packageName": {
+              "type": "string",
+              "description": "Name of the package to add (required)"
+            },
+            "version": {
+              "type": "string",
+              "description": "Version constraint for the package (optional, e.g., '>=1.0.0', '==2.1.0')"
+            },
+            "extras": {
+              "type": "string",
+              "description": "Comma-separated list of extras to include (optional, e.g., 'dev,test')"
+            }
+          },
+          "required": [
+            "packageName"
+          ]
+        }
+      },
+      {
+        "name": "add_dev_package",
+        "displayName": "Add Dev Package",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uv-add-dev",
+        "icon": "$(add)",
+        "userDescription": "Add a Python package to the project as a development dependency",
+        "modelDescription": "Add a Python package to the project's development dependencies in pyproject.toml. Use when the user wants to install a development package, mentions adding a dev dependency, or needs to include a library for development/testing purposes. Supports version constraints and extras.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "packageName": {
+              "type": "string",
+              "description": "Name of the package to add as a development dependency (required)"
+            },
+            "version": {
+              "type": "string",
+              "description": "Version constraint for the package (optional, e.g., '>=1.0.0', '==2.1.0')"
+            },
+            "extras": {
+              "type": "string",
+              "description": "Comma-separated list of extras to include (optional, e.g., 'dev,test')"
+            }
+          },
+          "required": [
+            "packageName"
+          ]
+        }
+      },
+      {
+        "name": "upgrade_packages",
+        "displayName": "Upgrade Packages",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uv-upgrade",
+        "icon": "$(arrow-up)",
+        "userDescription": "Upgrade Python packages to their latest versions",
+        "modelDescription": "Upgrade project dependencies to their latest compatible versions. Use when the user wants to update packages, mentions upgrading dependencies, or needs to get the latest versions of their libraries. Can upgrade all packages or specific ones.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "upgradeType": {
+              "type": "string",
+              "enum": [
+                "all",
+                "specific"
+              ],
+              "description": "Whether to upgrade all packages or a specific package",
+              "default": "all"
+            },
+            "packageName": {
+              "type": "string",
+              "description": "Name of specific package to upgrade (when upgradeType is 'specific')"
+            }
+          }
+        }
+      },
+      {
+        "name": "clean_cache",
+        "displayName": "Clean Cache",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uv-clean",
+        "icon": "$(trash)",
+        "userDescription": "Clean UV package cache",
+        "modelDescription": "Clean the UV package cache to free up disk space and resolve caching issues. Use when the user mentions cache problems, wants to clear storage, or needs to resolve package installation issues that might be cache-related.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "generate_lock",
+        "displayName": "Generate Lock File",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uv-lock",
+        "icon": "$(lock)",
+        "userDescription": "Generate uv.lock file from pyproject.toml",
+        "modelDescription": "Generate a lock file (uv.lock) from pyproject.toml to pin exact dependency versions. Use when the user wants to create reproducible builds, mentions lock files, or needs to freeze dependency versions. Supports including extras and specific groups.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "includeExtras": {
+              "type": "string",
+              "enum": [
+                "none",
+                "all",
+                "specific"
+              ],
+              "description": "Which extras to include in the lock file",
+              "default": "none"
+            },
+            "extras": {
+              "type": "string",
+              "description": "Comma-separated list of specific extras to include (when includeExtras is 'specific')"
+            },
+            "groups": {
+              "type": "string",
+              "description": "Comma-separated list of dependency groups to include"
+            }
+          }
+        }
+      },
+      {
+        "name": "create_venv",
+        "displayName": "Create Virtual Environment",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uv-venv",
+        "icon": "$(vm)",
+        "userDescription": "Create a virtual environment with UV",
+        "modelDescription": "Create a Python virtual environment using UV. Use when the user wants to set up an isolated Python environment, mentions virtual environments, or needs to create a clean development environment. Supports specifying Python version.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "pythonVersion": {
+              "type": "string",
+              "description": "Specific Python version to use (optional, e.g., '3.11', '3.12')"
+            }
+          }
+        }
+      },
+      {
+        "name": "run_script",
+        "displayName": "Run Python Script",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uv-run",
+        "icon": "$(play)",
+        "userDescription": "Run a Python script with UV",
+        "modelDescription": "Execute a Python script using UV's managed environment. Use when the user wants to run a Python file, mentions executing scripts, or needs to run code with project dependencies. Supports specifying Python version.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "scriptPath": {
+              "type": "string",
+              "description": "Path to the Python script to run (required)"
+            },
+            "pythonVersion": {
+              "type": "string",
+              "description": "Specific Python version to use (optional, e.g., '3.11', '3.12')"
+            }
+          },
+          "required": [
+            "scriptPath"
+          ]
+        }
+      },
+      {
+        "name": "add_script_dependency",
+        "displayName": "Add Script Dependency",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uv-script-dep",
+        "icon": "$(link)",
+        "userDescription": "Add inline dependency to a Python script",
+        "modelDescription": "Add inline dependencies to a Python script file. Use when the user wants to add dependencies directly to a script file, mentions script-specific dependencies, or needs to create self-contained scripts with their own requirements.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "scriptPath": {
+              "type": "string",
+              "description": "Path to the Python script file (required)"
+            },
+            "packageName": {
+              "type": "string",
+              "description": "Name of the package to add as dependency (required)"
+            }
+          },
+          "required": [
+            "scriptPath",
+            "packageName"
+          ]
+        }
+      },
+      {
+        "name": "install_python",
+        "displayName": "Install Python Version",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uv-python-install",
+        "icon": "$(desktop-download)",
+        "userDescription": "Install a specific Python version with UV",
+        "modelDescription": "Install a specific Python version using UV's Python management. Use when the user needs a different Python version, mentions installing Python, or requires a specific Python version for their project.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "pythonVersion": {
+              "type": "string",
+              "description": "Python version to install (required, e.g., '3.11', '3.12', '3.13')"
+            }
+          },
+          "required": [
+            "pythonVersion"
+          ]
+        }
+      },
+      {
+        "name": "pin_python",
+        "displayName": "Pin Python Version",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uv-python-pin",
+        "icon": "$(pin)",
+        "userDescription": "Pin Python version for the current project",
+        "modelDescription": "Pin a specific Python version for the current project. Use when the user wants to lock the Python version, mentions pinning Python, or needs to ensure consistent Python version across environments.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "pythonVersion": {
+              "type": "string",
+              "description": "Python version to pin (required, e.g., '3.11', '3.12', '3.13')"
+            }
+          },
+          "required": [
+            "pythonVersion"
+          ]
+        }
+      },
+      {
+        "name": "install_tool",
+        "displayName": "Install Tool",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uv-tool-install",
+        "icon": "$(tools)",
+        "userDescription": "Install a Python tool globally with UV",
+        "modelDescription": "Install a Python tool globally using UV's tool management. Use when the user wants to install command-line tools like ruff, black, pytest, etc., mentions installing tools, or needs global Python utilities.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "toolName": {
+              "type": "string",
+              "description": "Name of the tool to install (required, e.g., 'ruff', 'black', 'pytest')"
+            }
+          },
+          "required": [
+            "toolName"
+          ]
+        }
+      },
+      {
+        "name": "run_tool",
+        "displayName": "Run Tool with UVX",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uvx-run",
+        "icon": "$(terminal)",
+        "userDescription": "Run a Python tool with UVX",
+        "modelDescription": "Execute a Python tool using UVX (UV's tool runner). Use when the user wants to run Python tools without installing them globally, mentions running tools temporarily, or needs to execute command-line utilities.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "toolName": {
+              "type": "string",
+              "description": "Name of the tool to run (required, e.g., 'ruff', 'black', 'pytest')"
+            },
+            "arguments": {
+              "type": "string",
+              "description": "Arguments to pass to the tool (optional)"
+            }
+          },
+          "required": [
+            "toolName"
+          ]
+        }
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "tsc -p ./",
@@ -252,9 +620,10 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@types/mocha": "^10.0.10",
     "@types/node": "^18.0.0",
     "@types/vscode": "^1.70.0",
-    "typescript": "^4.7.4",
-    "vscode-test": "^1.6.2"
+    "@vscode/test-electron": "^2.3.0",
+    "typescript": "^4.7.4"
   }
 }

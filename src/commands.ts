@@ -29,7 +29,8 @@ export function registerCommands(context: vscode.ExtensionContext) {
         { command: 'uv.pinPython', callback: pinPython },
         { command: 'uv.installTool', callback: installTool },
         { command: 'uv.runTool', callback: runTool },
-        { command: 'uv.add', callback: addPackageToProject }
+        { command: 'uv.add', callback: addPackageToProject },
+        { command: 'uv.addDev', callback: addDevPackageToProject }
     ];
 
     for (const { command, callback } of commands) {
@@ -170,6 +171,53 @@ async function addPackageToProject() {
     
     // Show terminal and run the command
     const terminal = vscode.window.createTerminal('UV Add Package');
+    terminal.show();
+    terminal.sendText(command);
+}
+
+// Add a dev package to the project
+async function addDevPackageToProject() {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) {
+        vscode.window.showErrorMessage('No workspace is open.');
+        return;
+    }
+
+    const workspaceRoot = workspaceFolders[0].uri.fsPath;
+    
+    // Ask for package name
+    const packageName = await vscode.window.showInputBox({
+        placeHolder: 'Package name',
+        prompt: 'Enter the package name to add as a dev dependency'
+    });
+    
+    if (!packageName) return;
+    
+    // Ask for package version (optional)
+    const packageVersion = await vscode.window.showInputBox({
+        placeHolder: 'Version constraint (optional, e.g. >=1.0.0)',
+        prompt: 'Enter version constraint (optional)'
+    });
+    
+    // Ask for extras (optional)
+    const extras = await vscode.window.showInputBox({
+        placeHolder: 'Extras (optional, e.g. dev,test)',
+        prompt: 'Enter extras to include (optional)'
+    });
+    
+    // Build command with --dev flag
+    let command = `uv add --dev ${packageName}`;
+    
+    if (packageVersion) {
+        command += `==${packageVersion}`;
+    }
+    
+    if (extras) {
+        command += `[${extras}]`;
+    }
+    
+    // Show terminal and run the command
+    const terminal = vscode.window.createTerminal('UV Add Dev Package');
     terminal.show();
     terminal.sendText(command);
 }
