@@ -72,6 +72,10 @@ export interface RunToolParams {
     arguments?: string;
 }
 
+export interface ActivateVirtualEnvParams {
+    // No parameters needed - the tool will auto-detect or prompt for venv selection
+}
+
 // Base class for UV tools
 abstract class UVToolBase<T> implements vscode.LanguageModelTool<T> {
     protected workspaceRoot: string | undefined;
@@ -829,6 +833,103 @@ export class InstallToolTool extends UVToolBase<InstallToolParams> {
     }
 }
 
+export class ActivateVirtualEnvTool extends UVToolBase<ActivateVirtualEnvParams> {
+    async prepareInvocation(
+        options: vscode.LanguageModelToolInvocationPrepareOptions<ActivateVirtualEnvParams>,
+        _token: vscode.CancellationToken
+    ): Promise<vscode.PreparedToolInvocation> {
+        this.checkWorkspace();
+        const selectedDir = await this.selectWorkingDirectory();
+        
+        return {
+            invocationMessage: 'Activating virtual environment',
+            confirmationMessages: {
+                title: 'Activate Virtual Environment',
+                message: new vscode.MarkdownString(
+                    `Activate a virtual environment?\n\n` +
+                    `**Directory:** \`${selectedDir}\`\n\n` +
+                    `This will search for existing virtual environments and activate one in a new terminal. If no virtual environment is found, you'll have the option to create one.`
+                )
+            }
+        };
+    }
+
+    async invoke(
+        options: vscode.LanguageModelToolInvocationOptions<ActivateVirtualEnvParams>,
+        _token: vscode.CancellationToken
+    ): Promise<vscode.LanguageModelToolResult> {
+        try {
+            this.checkWorkspace();
+            const selectedDir = await this.selectWorkingDirectory();
+
+            // Common virtual environment paths to check
+            const commonVenvPaths = [
+                path.join(selectedDir, '.venv'),
+                path.join(selectedDir, 'venv'),
+                path.join(selectedDir, '.env'),
+                path.join(selectedDir, 'env')
+            ];
+
+            // Find existing virtual environments
+            const existingVenvs: string[] = [];
+            for (const venvPath of commonVenvPaths) {
+                if (fs.existsSync(venvPath)) {
+                    // Check if it's a valid virtual environment
+                    const activateScript = process.platform === 'win32' 
+                        ? path.join(venvPath, 'Scripts', 'activate.bat')
+                        : path.join(venvPath, 'bin', 'activate');
+                    
+                    if (fs.existsSync(activateScript)) {
+                        existingVenvs.push(venvPath);
+                    }
+                }
+            }
+
+            let selectedVenvPath: string;
+
+            if (existingVenvs.length === 0) {
+                return new vscode.LanguageModelToolResult([
+                    new vscode.LanguageModelTextPart(`No virtual environments found in ${selectedDir}. You can create one using the "UV: Create Virtual Environment" command or the create_venv tool.`)
+                ]);
+            } else if (existingVenvs.length === 1) {
+                // Only one virtual environment found, use it
+                selectedVenvPath = existingVenvs[0];
+            } else {
+                // Multiple virtual environments found, use the first one (.venv is preferred)
+                selectedVenvPath = existingVenvs[0];
+            }
+
+            // Determine the activation command based on the platform
+            let activationCommand: string;
+            if (process.platform === 'win32') {
+                // Windows
+                const activateScript = path.join(selectedVenvPath, 'Scripts', 'activate.bat');
+                activationCommand = `"${activateScript}"`;
+            } else {
+                // Unix-like systems (macOS, Linux)
+                const activateScript = path.join(selectedVenvPath, 'bin', 'activate');
+                activationCommand = `source "${activateScript}"`;
+            }
+
+            // Create a new terminal and activate the virtual environment
+            const terminal = vscode.window.createTerminal({
+                name: 'UV Virtual Environment',
+                cwd: selectedDir
+            });
+            
+            terminal.show();
+            terminal.sendText(activationCommand);
+            
+            const venvName = path.basename(selectedVenvPath);
+            return new vscode.LanguageModelToolResult([
+                new vscode.LanguageModelTextPart(`Successfully activated virtual environment "${venvName}" in a new terminal. The virtual environment is now active and ready to use.`)
+            ]);
+        } catch (error: any) {
+            throw new Error(`Failed to activate virtual environment: ${error.message}`);
+        }
+    }
+}
+
 export class RunToolTool extends UVToolBase<RunToolParams> {
     async prepareInvocation(
         options: vscode.LanguageModelToolInvocationPrepareOptions<RunToolParams>,
@@ -895,6 +996,7 @@ export function registerLanguageModelTools(context: vscode.ExtensionContext) {
         context.subscriptions.push(vscode.lm.registerTool('pin_python', new PinPythonTool()));
         context.subscriptions.push(vscode.lm.registerTool('install_tool', new InstallToolTool()));
         context.subscriptions.push(vscode.lm.registerTool('run_tool', new RunToolTool()));
+        context.subscriptions.push(vscode.lm.registerTool('activate_venv', new ActivateVirtualEnvTool()));
     } catch (error) {
         console.warn('Failed to register some language model tools:', error);
     }

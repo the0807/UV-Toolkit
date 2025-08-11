@@ -4,6 +4,15 @@ All notable changes to the "uv-toolkit" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.1] - 2025-08-11
+
+### Added
+- **Open VSX**: Extension packaging and publishing now fully compatible with Open VSX Registry
+- **Virtual Environment Activation**: Direct command to activate UV-managed virtual environments
+
+### Improved
+- Updated release pipeline to streamline multi-marketplace publishing
+
 ## [0.1.0] - 2025-08-09
 
 ### Added

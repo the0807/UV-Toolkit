@@ -23,6 +23,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
         { command: 'uv.generateLock', callback: generateLockFile },
         { command: 'uv.upgradeDependencies', callback: upgradeDependencies },
         { command: 'uv.manageVirtualEnv', callback: manageVirtualEnv },
+        { command: 'uv.activateVirtualEnv', callback: activateVirtualEnv },
         { command: 'uv.runScript', callback: runScript },
         { command: 'uv.addScriptDependency', callback: addScriptDependency },
         { command: 'uv.installPython', callback: installPython },
@@ -542,6 +543,121 @@ async function runScript() {
     const terminal = vscode.window.createTerminal('UV Run');
     terminal.show();
     terminal.sendText(command);
+}
+
+// Activate virtual environment
+async function activateVirtualEnv() {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) {
+        vscode.window.showErrorMessage('No workspace is open.');
+        return;
+    }
+
+    const workspaceRoot = workspaceFolders[0].uri.fsPath;
+
+    // Common virtual environment paths to check
+    const commonVenvPaths = [
+        path.join(workspaceRoot, '.venv'),
+        path.join(workspaceRoot, 'venv'),
+        path.join(workspaceRoot, '.env'),
+        path.join(workspaceRoot, 'env')
+    ];
+
+    // Find existing virtual environments
+    const existingVenvs: string[] = [];
+    for (const venvPath of commonVenvPaths) {
+        if (fs.existsSync(venvPath)) {
+            // Check if it's a valid virtual environment
+            const activateScript = process.platform === 'win32' 
+                ? path.join(venvPath, 'Scripts', 'activate.bat')
+                : path.join(venvPath, 'bin', 'activate');
+            
+            if (fs.existsSync(activateScript)) {
+                existingVenvs.push(venvPath);
+            }
+        }
+    }
+
+    let selectedVenvPath: string;
+
+    if (existingVenvs.length === 0) {
+        // No virtual environments found, ask if user wants to create one
+        const createVenv = await vscode.window.showQuickPick([
+            { label: 'Create new virtual environment', description: 'Create a new virtual environment and activate it' },
+            { label: 'Specify custom path', description: 'Specify a custom path to an existing virtual environment' }
+        ], {
+            placeHolder: 'No virtual environments found. What would you like to do?'
+        });
+
+        if (!createVenv) return;
+
+        if (createVenv.label === 'Create new virtual environment') {
+            // Create a new virtual environment first
+            await manageVirtualEnv();
+            // After creation, try to find the newly created venv
+            const defaultVenvPath = path.join(workspaceRoot, '.venv');
+            if (fs.existsSync(defaultVenvPath)) {
+                selectedVenvPath = defaultVenvPath;
+            } else {
+                vscode.window.showErrorMessage('Failed to create virtual environment.');
+                return;
+            }
+        } else {
+            // Ask for custom path
+            const customPath = await vscode.window.showInputBox({
+                placeHolder: 'Enter path to virtual environment',
+                prompt: 'Enter the full path to your virtual environment directory'
+            });
+
+            if (!customPath || !fs.existsSync(customPath)) {
+                vscode.window.showErrorMessage('Invalid virtual environment path.');
+                return;
+            }
+
+            selectedVenvPath = customPath;
+        }
+    } else if (existingVenvs.length === 1) {
+        // Only one virtual environment found, use it
+        selectedVenvPath = existingVenvs[0];
+    } else {
+        // Multiple virtual environments found, let user choose
+        const venvOptions = existingVenvs.map(venvPath => ({
+            label: path.basename(venvPath),
+            description: venvPath,
+            detail: `Virtual environment at ${venvPath}`
+        }));
+
+        const selectedVenv = await vscode.window.showQuickPick(venvOptions, {
+            placeHolder: 'Select a virtual environment to activate'
+        });
+
+        if (!selectedVenv) return;
+        selectedVenvPath = selectedVenv.description;
+    }
+
+    // Determine the activation command based on the platform
+    let activationCommand: string;
+    if (process.platform === 'win32') {
+        // Windows
+        const activateScript = path.join(selectedVenvPath, 'Scripts', 'activate.bat');
+        activationCommand = `"${activateScript}"`;
+    } else {
+        // Unix-like systems (macOS, Linux)
+        const activateScript = path.join(selectedVenvPath, 'bin', 'activate');
+        activationCommand = `source "${activateScript}"`;
+    }
+
+    // Create a new terminal and activate the virtual environment
+    const terminal = vscode.window.createTerminal({
+        name: 'UV Virtual Environment',
+        cwd: workspaceRoot
+    });
+    
+    terminal.show();
+    terminal.sendText(activationCommand);
+    
+    // Show success message
+    vscode.window.showInformationMessage(`Virtual environment activated: ${path.basename(selectedVenvPath)}`);
 }
 
 // Generate uv.lock file from pyproject.toml with advanced options

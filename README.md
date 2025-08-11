@@ -63,11 +63,13 @@ Access common uv commands directly from the VS Code Command Palette:
 | `UV: Upgrade Packages` | Upgrade all packages |
 | `UV: Clean Cache` | Clean uv cache |
 | `UV: Add Package to Project` | Add a new package to your dependencies |
+| `UV: Add Dev Package to Project` | Add a new package to your development dependencies |
 | `UV: Remove Package from pyproject.toml` | Remove a package from your dependencies |
 | `UV: Search Package on PyPI` | Search for packages on PyPI and add them to your project |
 | `UV: Generate Lock File` | Generate a uv.lock file from your pyproject.toml |
 | `UV: Upgrade Dependencies` | Upgrade all dependencies or a specific package |
 | `UV: Create Virtual Environment` | Create a new virtual environment |
+| `UV: Activate Virtual Environment` | Activate an existing virtual environment |
 | `UV: Run Python Script` | Run a Python script with uv |
 | `UV: Add Script Dependency` | Add inline dependencies to a Python script |
 | `UV: Install Python Version` | Install a specific Python version |
