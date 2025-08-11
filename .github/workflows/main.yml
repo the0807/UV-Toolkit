@@ -105,4 +105,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ needs.package.outputs.tag }}
-          release_name: Release ${{ needs.package.outputs.ver_
+          release_name: Release ${{ needs.package.outputs.version }}
+          draft: false
+          prerelease: false
+
+      - name: Upload assets to a Release
+        uses: AButler/upload-release-assets@v2.0
+        with:
+          files: ${{ needs.package.outputs.packageName }}
+          release-tag: ${{ needs.package.outputs.tag }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
