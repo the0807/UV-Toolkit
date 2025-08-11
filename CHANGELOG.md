@@ -4,6 +4,10 @@ All notable changes to the "uv-toolkit" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.2] - 2025-08-11
+
+- **Test for workflow execution**
+
 ## [0.1.1] - 2025-08-11
 
 ### Added

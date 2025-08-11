@@ -2,7 +2,7 @@
   "name": "uv-toolkit",
   "displayName": "UV Toolkit",
   "description": "Enhance your Python development experience with uv - the fast Python package manager. Provides syntax highlighting, package links, command integration, and more.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "engines": {
     "vscode": "^1.70.0"
   },
