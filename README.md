@@ -10,6 +10,7 @@ UV Toolkit is an essential tool for Python developers using uv. This extension p
 
 ## ⭐ Key Features at a Glance
 
+* **VS Code Copilot Integration** - Use UV commands through Copilot agent mode with natural language
 * **Command Palette Integration** - Access uv commands directly from VS Code
 * **Package Management** - Easily add, remove, and search for packages
 * **Dependency Diagnostics** - Get warnings for missing dependencies
@@ -20,6 +21,37 @@ UV Toolkit is an essential tool for Python developers using uv. This extension p
 ---
 
 ## ✨ Features
+
+### 🤖 VS Code Copilot Integration
+
+UV Toolkit integrates seamlessly with VS Code Copilot's agent mode, allowing you to use natural language to execute UV commands. Once installed, you can interact with UV through Copilot using the following tools:
+
+| Tool Reference | Description | Example Usage |
+|----------------|-------------|---------------|
+| `#uv-init` | Initialize a new Python project | "Initialize a new UV project called 'my-app'" |
+| `#uv-sync` | Sync project dependencies | "Sync my project dependencies" |
+| `#uv-add` | Add a package to the project | "Add the requests package to my project" |
+| `#uv-upgrade` | Upgrade packages | "Upgrade all my packages to the latest versions" |
+| `#uv-clean` | Clean UV cache | "Clean the UV cache to free up space" |
+| `#uv-lock` | Generate lock file | "Generate a lock file for my project" |
+| `#uv-venv` | Create virtual environment | "Create a virtual environment with Python 3.11" |
+| `#uv-run` | Run Python script | "Run my main.py script" |
+| `#uv-script-dep` | Add script dependency | "Add numpy as a dependency to my script.py" |
+| `#uv-python-install` | Install Python version | "Install Python 3.12" |
+| `#uv-python-pin` | Pin Python version | "Pin Python 3.11 for this project" |
+| `#uv-tool-install` | Install Python tool | "Install the ruff linting tool" |
+| `#uvx-run` | Run tool with UVX | "Run black formatter on my code" |
+
+#### Example Conversations with Copilot:
+
+**User:** "I need to start a new Python project with UV"  
+**Copilot:** I'll help you initialize a new UV project. *[Uses #uv-init tool]*
+
+**User:** "Add pandas and numpy to my data science project"  
+**Copilot:** I'll add those packages to your project. *[Uses #uv-add tool]*
+
+**User:** "My dependencies are out of sync, can you fix that?"  
+**Copilot:** I'll sync your project dependencies. *[Uses #uv-sync tool]*
 
 ### 🎮 Command Palette Integration
 Access common uv commands directly from the VS Code Command Palette:

@@ -4,6 +4,28 @@ All notable changes to the "uv-toolkit" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.0] - 2025-08-09
+
+### Added
+- **VS Code Copilot Integration**: Full support for VS Code Language Model Tools API
+  - 13 interactive tools for UV package management through Copilot agent mode
+  - Natural language interface for UV commands (e.g., "Add pandas to my project")
+  - Tool references: #uv-init, #uv-sync, #uv-add, #uv-upgrade, #uv-clean, etc.
+  - Rich confirmation dialogs with Markdown formatting
+  - Comprehensive error handling for LLM consumption
+  - Seamless integration with existing UV command implementations
+
+### Improved
+- Enhanced package.json with Language Model Tools configuration
+- Updated extension activation to register tools automatically
+- Improved TypeScript architecture with proper tool interfaces
+- Enhanced documentation with Copilot usage examples
+
+## [0.0.2] - 2025-04-09
+
+### Fixed
+- Bug fixes and stability improvements
+
 ## [0.0.1] - 2025-04-09
 
 ### Added
