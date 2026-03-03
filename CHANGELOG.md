@@ -4,6 +4,29 @@ All notable changes to the "uv-toolkit" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.8] - 2026-03-03
+
+### Added
+- **Auto uv Installer**: The extension now detects whether `uv` is installed on activation and prompts the user to install it if not found
+  - Auto-prompt once per session when uv is missing
+  - `UV: Install uv` command for manual installation via Command Palette
+  - Platform-specific install scripts (curl for macOS/Linux, PowerShell for Windows)
+  - Notification with "Restart Window" button after installation starts
+  - `#uv-install` Copilot tool for natural language installation
+- **PEP 723 Interpreter Selection**: Automatically sets the VS Code Python interpreter when opening a script with PEP 723 inline metadata (`# /// script` block)
+  - Reads `requires-python` constraint and calls `uv python find` to locate the interpreter
+  - Sets `python.defaultInterpreterPath` for the workspace and shows an info notification
+  - Cache invalidation on file save to re-detect after metadata changes
+  - `UV: Set Interpreter for PEP 723 Script` command for manual triggering
+  - `#uv-pep723` Copilot tool for natural language interpreter setup
+  - `#uv-activate-venv` Copilot tool added to tool reference list
+
+### Fixed
+- **Version constraints**: Adding a package with a bare version number (e.g. `1.0.0`) now correctly produces `package==1.0.0` instead of `package1.0.0`
+- **uv lock commands**: `UV: Generate Lock File` and `UV: Upgrade Dependencies` now use the correct `uv lock` commands instead of the old `uv pip compile` / `uv pip install --upgrade` commands
+- **Diagnostics on open**: Dependency diagnostics now run immediately when a `pyproject.toml` file is opened, not only on subsequent edits
+- **Remove package**: `UV: Remove Package` now runs `uv remove <package>` in a terminal instead of directly editing `pyproject.toml`, keeping the lock file in sync
+
 ## [0.1.7] - 2025-08-11
 
 - **Version was bumped incorrectly, updated to 0.1.7 instead**

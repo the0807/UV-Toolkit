@@ -12,6 +12,8 @@ UV Toolkit is an essential tool for Python developers using uv. This extension p
 
 * **VS Code Copilot Integration** - Use UV commands through Copilot agent mode with natural language
 * **Command Palette Integration** - Access uv commands directly from VS Code
+* **Auto uv Installer** - Automatically detects if uv is missing and offers to install it
+* **PEP 723 Interpreter** - Auto-sets the Python interpreter from inline script metadata
 * **Package Management** - Easily add, remove, and search for packages
 * **Dependency Diagnostics** - Get warnings for missing dependencies
 * **Package Links** - Click on package names to navigate to PyPI pages
@@ -41,6 +43,9 @@ UV Toolkit integrates seamlessly with VS Code Copilot's agent mode, allowing you
 | `#uv-python-pin` | Pin Python version | "Pin Python 3.11 for this project" |
 | `#uv-tool-install` | Install Python tool | "Install the ruff linting tool" |
 | `#uvx-run` | Run tool with UVX | "Run black formatter on my code" |
+| `#uv-activate-venv` | Activate virtual environment | "Activate the virtual environment" |
+| `#uv-pep723` | Set Python interpreter for PEP 723 script | "Set the interpreter for my script.py" |
+| `#uv-install` | Install uv package manager | "Install uv on my machine" |
 
 #### Example Conversations with Copilot:
 
@@ -52,6 +57,32 @@ UV Toolkit integrates seamlessly with VS Code Copilot's agent mode, allowing you
 
 **User:** "My dependencies are out of sync, can you fix that?"  
 **Copilot:** I'll sync your project dependencies. *[Uses #uv-sync tool]*
+
+### ⚡ Auto uv Installer
+
+When the extension activates, it automatically checks whether `uv` is installed. If not found, a prompt appears offering to install it immediately.
+
+* **Auto-detection on startup** — prompts once per session if uv is missing
+* **Manual install** — run `UV: Install uv` from the Command Palette at any time
+* **Platform-specific scripts** — uses the official Astral install script for macOS/Linux and PowerShell for Windows
+* **Restart suggestion** — after installation starts, a notification offers to reload the window
+
+### 🐍 PEP 723 Interpreter Selection
+
+When you open a Python script containing [PEP 723 inline metadata](https://peps.python.org/pep-0723/) (`# /// script` block), the extension automatically reads the `requires-python` constraint, finds the matching interpreter via `uv python find`, and sets it as the VS Code Python interpreter.
+
+```python
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["requests>=2.0"]
+# ///
+import requests
+```
+
+* **Auto-detection** — triggers when the file is opened or becomes active
+* **Interpreter update** — sets `python.defaultInterpreterPath` for the workspace
+* **Info notification** — confirms which Python version was selected
+* **Manual command** — run `UV: Set Interpreter for PEP 723 Script` to trigger manually
 
 ### 🎮 Command Palette Integration
 Access common uv commands directly from the VS Code Command Palette:
@@ -76,6 +107,8 @@ Access common uv commands directly from the VS Code Command Palette:
 | `UV: Pin Python Version` | Pin a specific Python version for the project |
 | `UV: Install Tool` | Install a Python tool with uv |
 | `UV: Run Tool with UVX` | Run a Python tool in an ephemeral environment |
+| `UV: Set Interpreter for PEP 723 Script` | Set the Python interpreter based on a script's inline metadata |
+| `UV: Install uv` | Install the uv package manager |
 
 ### 📦 Package Management
 Easily add, remove, and search for packages with interactive dialogs.
@@ -103,7 +136,7 @@ Right-click on pyproject.toml files in the explorer or editor to access UV comma
 
 ## 📋 Requirements
 
-> **IMPORTANT**: This extension requires [uv](https://github.com/astral-sh/uv) to be installed on your system. The extension will not function properly without uv installed and available in your PATH.
+> **NOTE**: This extension requires [uv](https://github.com/astral-sh/uv) to be installed on your system. If uv is not found, the extension will automatically offer to install it for you on activation.
 
 * Visual Studio Code 1.70.0 or higher
 * [uv](https://github.com/astral-sh/uv) installed and available in your PATH
@@ -228,6 +261,8 @@ This extension doesn't have any specific settings.
 <summary><b>🧹 Miscellaneous</b></summary>
 
 * **UV: Clean Cache**: Clean the uv cache.
+* **UV: Install uv**: Install the uv package manager. Checks if uv is already installed and, if not, runs the official platform-specific install script in a terminal.
+* **UV: Set Interpreter for PEP 723 Script**: Manually trigger PEP 723 interpreter detection for the active Python script.
 </details>
 
 ---
