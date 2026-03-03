@@ -45,7 +45,8 @@
     "onCommand:uv.runTool",
     "onCommand:uv.add",
     "onCommand:uv.addDev",
-    "onCommand:uv.setPep723Interpreter"
+    "onCommand:uv.setPep723Interpreter",
+    "onCommand:uv.installUv"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -165,6 +166,10 @@
       {
         "command": "uv.setPep723Interpreter",
         "title": "UV: Set Interpreter for PEP 723 Script"
+      },
+      {
+        "command": "uv.installUv",
+        "title": "UV: Install uv"
       }
     ],
     "menus": {
@@ -650,6 +655,19 @@
             }
           },
           "required": ["scriptPath"]
+        }
+      },
+      {
+        "name": "install_uv",
+        "displayName": "Install uv",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uv-install",
+        "icon": "$(cloud-download)",
+        "userDescription": "Install the uv Python package manager",
+        "modelDescription": "Checks whether uv is installed and, if not, installs it using the official platform-specific script. Use when the user mentions uv is missing, wants to install uv, or when other uv commands fail because uv is not found.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
         }
       }
     ]

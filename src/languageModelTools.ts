@@ -3,6 +3,7 @@ import { exec, execFile } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 import { parsePep723Metadata } from './utils';
+import { isUvInstalled, installUv } from './uvInstaller';
 
 // Tool parameter interfaces
 export interface InitProjectParams {
@@ -79,6 +80,10 @@ export interface ActivateVirtualEnvParams {
 
 export interface SetPep723InterpreterParams {
     scriptPath: string;
+}
+
+export interface InstallUvParams {
+    // No parameters needed
 }
 
 // Base class for UV tools
@@ -1073,6 +1078,53 @@ export class SetPep723InterpreterTool extends UVToolBase<SetPep723InterpreterPar
     }
 }
 
+export class InstallUvTool extends UVToolBase<InstallUvParams> {
+    prepareInvocation(
+        _options: vscode.LanguageModelToolInvocationPrepareOptions<InstallUvParams>,
+        _token: vscode.CancellationToken
+    ): vscode.ProviderResult<vscode.PreparedToolInvocation> {
+        return {
+            invocationMessage: 'Checking uv installation',
+            confirmationMessages: {
+                title: 'Install uv',
+                message: new vscode.MarkdownString(
+                    'Check whether uv is installed and install it if not?\n\n' +
+                    'This will run the official uv install script in a terminal.'
+                )
+            }
+        };
+    }
+
+    async invoke(
+        _options: vscode.LanguageModelToolInvocationOptions<InstallUvParams>,
+        _token: vscode.CancellationToken
+    ): Promise<vscode.LanguageModelToolResult> {
+        try {
+            let installed: boolean;
+            try {
+                installed = await isUvInstalled();
+            } catch {
+                installed = false;
+            }
+
+            if (installed) {
+                return new vscode.LanguageModelToolResult([
+                    new vscode.LanguageModelTextPart('uv is already installed.')
+                ]);
+            }
+
+            await installUv();
+            return new vscode.LanguageModelToolResult([
+                new vscode.LanguageModelTextPart(
+                    'uv installation started in terminal. Restart VS Code when complete.'
+                )
+            ]);
+        } catch (error: any) {
+            throw new Error(`Failed to install uv: ${error.message}`);
+        }
+    }
+}
+
 // Registration function
 export function registerLanguageModelTools(context: vscode.ExtensionContext) {
     try {
@@ -1092,6 +1144,7 @@ export function registerLanguageModelTools(context: vscode.ExtensionContext) {
         context.subscriptions.push(vscode.lm.registerTool('run_tool', new RunToolTool()));
         context.subscriptions.push(vscode.lm.registerTool('activate_venv', new ActivateVirtualEnvTool()));
         context.subscriptions.push(vscode.lm.registerTool('set_pep723_interpreter', new SetPep723InterpreterTool()));
+        context.subscriptions.push(vscode.lm.registerTool('install_uv', new InstallUvTool()));
     } catch (error) {
         console.warn('Failed to register some language model tools:', error);
     }

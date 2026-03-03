@@ -114,3 +114,17 @@ export function parseDependencyNames(pyprojectText: string): string[] {
 
     return names;
 }
+
+/**
+ * Returns the platform-specific uv installation script command.
+ * Returns null for unsupported platforms.
+ */
+export function getInstallScript(platform: string): string | null {
+    if (platform === 'darwin' || platform === 'linux') {
+        return 'curl -LsSf https://astral.sh/uv/install.sh | sh';
+    }
+    if (platform === 'win32') {
+        return 'powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"';
+    }
+    return null;
+}

@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { buildVersionSpec, buildDiagnosticsFromText, buildLockCommand, buildUpgradeCommand, parsePep723Metadata } from '../utils';
+import { buildVersionSpec, buildDiagnosticsFromText, buildLockCommand, buildUpgradeCommand, parsePep723Metadata, getInstallScript } from '../utils';
 
 suite('buildVersionSpec', () => {
     test('adds == to bare version number without operator', () => {
@@ -151,5 +151,32 @@ import requests
         const result = parsePep723Metadata(text);
         assert.notStrictEqual(result, null);
         assert.strictEqual(result!.requiresPython, '>=3.11');
+    });
+});
+
+suite('getInstallScript', () => {
+    test('returns curl command on linux', () => {
+        assert.strictEqual(
+            getInstallScript('linux'),
+            'curl -LsSf https://astral.sh/uv/install.sh | sh'
+        );
+    });
+
+    test('returns curl command on darwin (macOS)', () => {
+        assert.strictEqual(
+            getInstallScript('darwin'),
+            'curl -LsSf https://astral.sh/uv/install.sh | sh'
+        );
+    });
+
+    test('returns powershell command on win32', () => {
+        assert.strictEqual(
+            getInstallScript('win32'),
+            'powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"'
+        );
+    });
+
+    test('returns null on unsupported platform', () => {
+        assert.strictEqual(getInstallScript('freebsd'), null);
     });
 });
