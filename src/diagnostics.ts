@@ -1,16 +1,12 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import { buildDiagnosticsFromText } from './utils';
 
 export function registerDiagnostics(context: vscode.ExtensionContext) {
     const diagnosticCollection = vscode.languages.createDiagnosticCollection('uv');
 
     async function refreshDiagnostics(document: vscode.TextDocument) {
         if (!document.fileName.endsWith('pyproject.toml')) return;
-
-        const pyprojectText = document.getText();
-        const depMatches = [...pyprojectText.matchAll(/\[dependencies\](.*?)(\n\[|\n*$)/gs)];
-        const allDeps = depMatches.flatMap(match => match[1].match(/([a-zA-Z0-9_-]+)\s*=\s*["'][^"']+["']/g) || []);
-        const depNames = allDeps.map(dep => dep.split('=')[0].trim());
 
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
         if (!workspaceFolder) return;
@@ -19,7 +15,7 @@ export function registerDiagnostics(context: vscode.ExtensionContext) {
         if (!fs.existsSync(lockPath.fsPath)) return;
 
         const lockText = fs.readFileSync(lockPath.fsPath, 'utf-8');
-        const missingDeps = depNames.filter(dep => !lockText.includes(dep));
+        const missingDeps = buildDiagnosticsFromText(document.getText(), lockText);
 
         const diagnostics = missingDeps.map(dep => {
             const index = document.getText().indexOf(dep);
@@ -32,6 +28,7 @@ export function registerDiagnostics(context: vscode.ExtensionContext) {
     }
 
     context.subscriptions.push(
-        vscode.workspace.onDidSaveTextDocument(refreshDiagnostics)
+        vscode.workspace.onDidSaveTextDocument(refreshDiagnostics),
+        vscode.workspace.onDidOpenTextDocument(refreshDiagnostics)
     );
 }

@@ -1,93 +1,37 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { parseDependencyNames } from './utils';
 
 export function registerPackageManager(context: vscode.ExtensionContext) {
     // Register package remove command
     const removePackageDisposable = vscode.commands.registerCommand('uv.removePackage', async () => {
-        // Check if workspace is open
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (!workspaceFolders) {
             vscode.window.showErrorMessage('No workspace is open.');
             return;
         }
 
-        // Find pyproject.toml file
         const pyprojectPath = path.join(workspaceFolders[0].uri.fsPath, 'pyproject.toml');
-        
         if (!fs.existsSync(pyprojectPath)) {
             vscode.window.showErrorMessage('pyproject.toml file not found.');
             return;
         }
 
-        // Read file content
-        let content = fs.readFileSync(pyprojectPath, 'utf-8');
-        
-        // Extract packages from [dependencies] section
-        const depMatches = content.match(/\[dependencies\](.*?)(\n\[|\n*$)/s);
-        if (!depMatches || !depMatches[1]) {
-            vscode.window.showInformationMessage('No dependencies found in pyproject.toml');
-            return;
-        }
-
-        // Parse packages
-        const depsSection = depMatches[1];
-        const packageRegex = /([a-zA-Z0-9_-]+)\s*=\s*["']([^"']+)["']/g;
-        const packages: { name: string, version: string }[] = [];
-        
-        let match;
-        while ((match = packageRegex.exec(depsSection)) !== null) {
-            packages.push({
-                name: match[1],
-                version: match[2]
-            });
-        }
-
+        const packages = parseDependencyNames(fs.readFileSync(pyprojectPath, 'utf-8'));
         if (packages.length === 0) {
             vscode.window.showInformationMessage('No packages found in dependencies.');
             return;
         }
 
-        // Show quick pick with package names
-        const selectedPackage = await vscode.window.showQuickPick(
-            packages.map(pkg => `${pkg.name} (${pkg.version})`),
-            { placeHolder: 'Select a package to remove' }
-        );
-
+        const selectedPackage = await vscode.window.showQuickPick(packages, {
+            placeHolder: 'Select a package to remove'
+        });
         if (!selectedPackage) return;
 
-        // Extract package name from selection
-        const packageName = selectedPackage.split(' ')[0];
-
-        // Remove package from dependencies
-        const updatedContent = content.replace(
-            /\[dependencies\](.*?)(\n\[|\n*$)/s,
-            (match, deps, end) => {
-                // Remove the package line
-                const updatedDeps = deps.replace(
-                    new RegExp(`\\s*${packageName}\\s*=\\s*["'][^"']*["']\\s*\\n?`, 'g'),
-                    ''
-                );
-                return `[dependencies]${updatedDeps}${end}`;
-            }
-        );
-
-        // Save file
-        fs.writeFileSync(pyprojectPath, updatedContent);
-        vscode.window.showInformationMessage(`Package ${packageName} removed`);
-        
-        // Update editor content if file is open
-        const openDocuments = vscode.workspace.textDocuments;
-        const pyprojectDoc = openDocuments.find(doc => doc.fileName === pyprojectPath);
-        if (pyprojectDoc) {
-            const edit = new vscode.WorkspaceEdit();
-            edit.replace(
-                pyprojectDoc.uri,
-                new vscode.Range(0, 0, pyprojectDoc.lineCount, 0),
-                updatedContent
-            );
-            await vscode.workspace.applyEdit(edit);
-        }
+        const terminal = vscode.window.createTerminal('UV Remove Package');
+        terminal.show();
+        terminal.sendText(`uv remove ${selectedPackage}`);
     });
 
     context.subscriptions.push(removePackageDisposable);

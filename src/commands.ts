@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { exec } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
+import { buildVersionSpec, buildLockCommand, buildUpgradeCommand, parseDependencyNames } from './utils';
 
 function runCommand(cmd: string) {
     vscode.window.showInformationMessage(`Running: ${cmd}`);
@@ -160,16 +161,13 @@ async function addPackageToProject() {
     });
     
     // Build command
-    let command = `uv add ${packageName}`;
-    
-    if (packageVersion) {
-        command += `==${packageVersion}`;
-    }
-    
+    const packageSpec = buildVersionSpec(packageName, packageVersion || '');
+    let command = `uv add ${packageSpec}`;
+
     if (extras) {
         command += `[${extras}]`;
     }
-    
+
     // Show terminal and run the command
     const terminal = vscode.window.createTerminal('UV Add Package');
     terminal.show();
@@ -207,16 +205,13 @@ async function addDevPackageToProject() {
     });
     
     // Build command with --dev flag
-    let command = `uv add --dev ${packageName}`;
-    
-    if (packageVersion) {
-        command += `==${packageVersion}`;
-    }
-    
+    const packageSpec = buildVersionSpec(packageName, packageVersion || '');
+    let command = `uv add --dev ${packageSpec}`;
+
     if (extras) {
         command += `[${extras}]`;
     }
-    
+
     // Show terminal and run the command
     const terminal = vscode.window.createTerminal('UV Add Dev Package');
     terminal.show();
@@ -369,41 +364,26 @@ async function upgradeDependencies() {
 
     if (!options) return;
 
-    let command = 'uv pip compile pyproject.toml -o uv.lock';
-    
-    if (options.label === 'Upgrade all') {
-        command += ' --upgrade';
-    } else if (options.label === 'Upgrade specific package') {
-        // Parse pyproject.toml to get the list of dependencies
+    let command: string;
+
+    if (options.label === 'Upgrade specific package') {
         const pyprojectContent = fs.readFileSync(pyprojectPath, 'utf-8');
-        const depMatches = pyprojectContent.match(/\[dependencies\](.*?)(\n\[|\n*$)/s);
-        
-        if (!depMatches || !depMatches[1]) {
-            vscode.window.showErrorMessage('No dependencies found in pyproject.toml');
-            return;
-        }
-        
-        const depsSection = depMatches[1];
-        const packageRegex = /([a-zA-Z0-9_-]+)\s*=\s*["'][^"']*["']/g;
-        const packages: string[] = [];
-        
-        let match;
-        while ((match = packageRegex.exec(depsSection)) !== null) {
-            packages.push(match[1]);
-        }
-        
+        const packages = parseDependencyNames(pyprojectContent);
+
         if (packages.length === 0) {
             vscode.window.showErrorMessage('No packages found in dependencies.');
             return;
         }
-        
+
         const selectedPackage = await vscode.window.showQuickPick(packages, {
             placeHolder: 'Select a package to upgrade'
         });
-        
+
         if (!selectedPackage) return;
-        
-        command += ` --upgrade-package ${selectedPackage}`;
+
+        command = buildUpgradeCommand('specific', selectedPackage);
+    } else {
+        command = buildUpgradeCommand('all');
     }
 
     // Show progress notification
@@ -413,7 +393,6 @@ async function upgradeDependencies() {
         cancellable: false
     }, async (progress) => {
         try {
-            // Run uv pip compile command to upgrade dependencies
             await new Promise<void>((resolve, reject) => {
                 exec(command, { cwd: workspaceRoot }, (error, stdout, stderr) => {
                     if (error) {
@@ -423,7 +402,7 @@ async function upgradeDependencies() {
                     resolve();
                 });
             });
-            
+
             vscode.window.showInformationMessage('Dependencies upgraded successfully.');
         } catch (error: any) {
             vscode.window.showErrorMessage(`Failed to upgrade dependencies: ${error.message}`);
@@ -688,34 +667,24 @@ async function generateLockFile() {
 
     if (!options) return;
 
-    let command = 'uv pip compile pyproject.toml -o uv.lock';
-    
+    let command: string;
+
     if (options.label === 'Include all extras') {
-        command += ' --all-extras';
+        command = buildLockCommand('all-extras');
     } else if (options.label === 'Specify extras') {
         const extras = await vscode.window.showInputBox({
             placeHolder: 'Enter extras (comma-separated, e.g. dev,test)',
             prompt: 'Specify which extras to include'
         });
-        
-        if (extras) {
-            const extrasList = extras.split(',').map(e => e.trim());
-            for (const extra of extrasList) {
-                command += ` --extra ${extra}`;
-            }
-        }
+        command = buildLockCommand('extras', extras || undefined);
     } else if (options.label === 'Specify groups') {
         const groups = await vscode.window.showInputBox({
             placeHolder: 'Enter groups (comma-separated, e.g. dev,test)',
             prompt: 'Specify which dependency groups to include'
         });
-        
-        if (groups) {
-            const groupsList = groups.split(',').map(g => g.trim());
-            for (const group of groupsList) {
-                command += ` --group ${group}`;
-            }
-        }
+        command = buildLockCommand('groups', undefined, groups || undefined);
+    } else {
+        command = buildLockCommand('basic');
     }
 
     // Show progress notification
@@ -725,7 +694,6 @@ async function generateLockFile() {
         cancellable: false
     }, async (progress) => {
         try {
-            // Run uv pip compile command to generate lock file
             await new Promise<void>((resolve, reject) => {
                 exec(command, { cwd: workspaceRoot }, (error, stdout, stderr) => {
                     if (error) {
@@ -735,7 +703,7 @@ async function generateLockFile() {
                     resolve();
                 });
             });
-            
+
             vscode.window.showInformationMessage('uv.lock file generated successfully.');
         } catch (error: any) {
             vscode.window.showErrorMessage(`Failed to generate uv.lock file: ${error.message}`);
