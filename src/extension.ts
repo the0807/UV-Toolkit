@@ -4,6 +4,7 @@ import { registerCommands } from './commands';
 import { registerDiagnostics } from './diagnostics';
 import { registerPackageManager } from './packageManager';
 import { registerLanguageModelTools } from './languageModelTools';
+import { registerPep723Provider } from './pep723';
 
 export function activate(context: vscode.ExtensionContext) {
     // Register providers
@@ -14,7 +15,8 @@ export function activate(context: vscode.ExtensionContext) {
     
     // Register Language Model Tools for VS Code Copilot integration
     registerLanguageModelTools(context);
-    
+    registerPep723Provider(context);
+
     // Register language configuration for pyproject.toml
     vscode.languages.setLanguageConfiguration('pyproject-toml', {
         wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g

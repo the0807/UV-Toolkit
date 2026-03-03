@@ -56,6 +56,43 @@ export function buildUpgradeCommand(type: 'all' | 'specific', packageName?: stri
     return 'uv lock --upgrade';
 }
 
+export interface Pep723Metadata {
+    requiresPython?: string;
+    dependencies: string[];
+}
+
+/**
+ * Parses PEP 723 inline script metadata from a Python source file.
+ * Returns null if no "# /// script" block is found.
+ */
+export function parsePep723Metadata(text: string): Pep723Metadata | null {
+    // Normalize line endings to handle CRLF (Windows) files
+    const normalized = text.replace(/\r\n/g, '\n');
+
+    const blockMatch = normalized.match(/^# \/\/\/ script\n((?:#[^\n]*\n)*?)# \/\/\/(?:\n|$)/m);
+    if (!blockMatch) {
+        return null;
+    }
+
+    // Strip leading "# " or "#" from each line to get raw TOML content
+    const content = blockMatch[1].replace(/^# ?/gm, '');
+
+    const requiresPythonMatch = content.match(/requires-python\s*=\s*"([^"]+)"/);
+    const requiresPython = requiresPythonMatch?.[1];
+
+    const depsBlockMatch = content.match(/dependencies\s*=\s*\[([\s\S]*?)\]/);
+    const dependencies: string[] = [];
+    if (depsBlockMatch) {
+        const depRegex = /"([^"]+)"/g;
+        let m;
+        while ((m = depRegex.exec(depsBlockMatch[1])) !== null) {
+            dependencies.push(m[1]);
+        }
+    }
+
+    return { requiresPython, dependencies };
+}
+
 /**
  * Parses package names from the [project].dependencies array in a pyproject.toml string.
  */

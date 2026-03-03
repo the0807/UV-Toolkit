@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
-import { exec } from 'child_process';
+import { exec, execFile } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
+import { parsePep723Metadata } from './utils';
 
 // Tool parameter interfaces
 export interface InitProjectParams {
@@ -74,6 +75,10 @@ export interface RunToolParams {
 
 export interface ActivateVirtualEnvParams {
     // No parameters needed - the tool will auto-detect or prompt for venv selection
+}
+
+export interface SetPep723InterpreterParams {
+    scriptPath: string;
 }
 
 // Base class for UV tools
@@ -979,6 +984,95 @@ export class RunToolTool extends UVToolBase<RunToolParams> {
     }
 }
 
+export class SetPep723InterpreterTool extends UVToolBase<SetPep723InterpreterParams> {
+    async prepareInvocation(
+        options: vscode.LanguageModelToolInvocationPrepareOptions<SetPep723InterpreterParams>,
+        _token: vscode.CancellationToken
+    ): Promise<vscode.PreparedToolInvocation> {
+        this.checkWorkspace();
+        const { scriptPath } = options.input;
+
+        return {
+            invocationMessage: `Setting Python interpreter for PEP 723 script: ${scriptPath}`,
+            confirmationMessages: {
+                title: 'Set PEP 723 Interpreter',
+                message: new vscode.MarkdownString(
+                    `Set the Python interpreter based on PEP 723 inline script metadata?\n\n` +
+                    `**Script:** \`${scriptPath}\`\n\n` +
+                    `This will read the script's \`requires-python\` field and configure the VS Code Python interpreter accordingly.`
+                )
+            }
+        };
+    }
+
+    async invoke(
+        options: vscode.LanguageModelToolInvocationOptions<SetPep723InterpreterParams>,
+        _token: vscode.CancellationToken
+    ): Promise<vscode.LanguageModelToolResult> {
+        try {
+            this.checkWorkspace();
+            const workspaceFolders = vscode.workspace.workspaceFolders;
+            if (!workspaceFolders) {
+                throw new Error('No workspace is open.');
+            }
+            const workspaceFolder = workspaceFolders[0];
+            const { scriptPath } = options.input;
+
+            const fullScriptPath = path.join(workspaceFolder.uri.fsPath, scriptPath);
+
+            if (!fs.existsSync(fullScriptPath)) {
+                throw new Error(`Script file not found: ${fullScriptPath}`);
+            }
+
+            const scriptText = fs.readFileSync(fullScriptPath, 'utf8');
+            const metadata = parsePep723Metadata(scriptText);
+
+            if (!metadata) {
+                throw new Error(`No PEP 723 inline script metadata (# /// script block) found in: ${scriptPath}`);
+            }
+
+            if (!metadata.requiresPython) {
+                throw new Error(`No requires-python field found in PEP 723 metadata of: ${scriptPath}`);
+            }
+
+            const interpreterPath = await new Promise<string>((resolve, reject) => {
+                execFile('uv', ['python', 'find', metadata.requiresPython!], (error: any, stdout: any, stderr: any) => {
+                    if (error) {
+                        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+                            reject(new Error('uv is not installed or not in PATH.'));
+                            return;
+                        }
+                        const isNotFound = (stderr as string).toLowerCase().includes('no interpreter') ||
+                                           (stderr as string).toLowerCase().includes('not found');
+                        if (isNotFound) {
+                            reject(new Error(`Python ${metadata.requiresPython} not found. Run 'uv python install ${metadata.requiresPython}' first.`));
+                            return;
+                        }
+                        reject(new Error(`uv error: ${stderr || error.message}`));
+                        return;
+                    }
+                    resolve(stdout.trim());
+                });
+            });
+
+            await vscode.workspace.getConfiguration('python', workspaceFolder.uri).update(
+                'defaultInterpreterPath',
+                interpreterPath,
+                vscode.ConfigurationTarget.WorkspaceFolder
+            );
+
+            return new vscode.LanguageModelToolResult([
+                new vscode.LanguageModelTextPart(
+                    `Successfully set Python interpreter to \`${interpreterPath}\` for script "${scriptPath}" ` +
+                    `(requires-python: ${metadata.requiresPython}).`
+                )
+            ]);
+        } catch (error: any) {
+            throw new Error(`Failed to set PEP 723 interpreter: ${error.message}`);
+        }
+    }
+}
+
 // Registration function
 export function registerLanguageModelTools(context: vscode.ExtensionContext) {
     try {
@@ -997,6 +1091,7 @@ export function registerLanguageModelTools(context: vscode.ExtensionContext) {
         context.subscriptions.push(vscode.lm.registerTool('install_tool', new InstallToolTool()));
         context.subscriptions.push(vscode.lm.registerTool('run_tool', new RunToolTool()));
         context.subscriptions.push(vscode.lm.registerTool('activate_venv', new ActivateVirtualEnvTool()));
+        context.subscriptions.push(vscode.lm.registerTool('set_pep723_interpreter', new SetPep723InterpreterTool()));
     } catch (error) {
         console.warn('Failed to register some language model tools:', error);
     }

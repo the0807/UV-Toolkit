@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { buildVersionSpec, buildDiagnosticsFromText, buildLockCommand, buildUpgradeCommand } from '../utils';
+import { buildVersionSpec, buildDiagnosticsFromText, buildLockCommand, buildUpgradeCommand, parsePep723Metadata } from '../utils';
 
 suite('buildVersionSpec', () => {
     test('adds == to bare version number without operator', () => {
@@ -92,5 +92,64 @@ name = "my-project"
 `;
         const missing = buildDiagnosticsFromText(pyprojectText, '');
         assert.deepStrictEqual(missing, []);
+    });
+});
+
+suite('parsePep723Metadata', () => {
+    test('parses requires-python and dependencies from valid PEP 723 block', () => {
+        const text = `#!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#   "requests>=2.0",
+#   "cowsay",
+# ]
+# ///
+import requests
+`;
+        const result = parsePep723Metadata(text);
+        assert.notStrictEqual(result, null);
+        assert.strictEqual(result!.requiresPython, '>=3.12');
+        assert.deepStrictEqual(result!.dependencies, ['requests>=2.0', 'cowsay']);
+    });
+
+    test('returns null when no PEP 723 block present', () => {
+        const text = `import requests\nprint("hello")`;
+        assert.strictEqual(parsePep723Metadata(text), null);
+    });
+
+    test('handles block with requires-python only (no dependencies)', () => {
+        const text = `# /// script\n# requires-python = ">=3.11"\n# ///\n`;
+        const result = parsePep723Metadata(text);
+        assert.notStrictEqual(result, null);
+        assert.strictEqual(result!.requiresPython, '>=3.11');
+        assert.deepStrictEqual(result!.dependencies, []);
+    });
+
+    test('handles block with dependencies only (no requires-python)', () => {
+        const text = `# /// script\n# dependencies = [\n#   "cowsay",\n# ]\n# ///\n`;
+        const result = parsePep723Metadata(text);
+        assert.notStrictEqual(result, null);
+        assert.strictEqual(result!.requiresPython, undefined);
+        assert.deepStrictEqual(result!.dependencies, ['cowsay']);
+    });
+
+    test('ignores non-script PEP 723 blocks', () => {
+        const text = `# /// test\n# requires-python = ">=3.12"\n# ///\n`;
+        assert.strictEqual(parsePep723Metadata(text), null);
+    });
+
+    test('handles CRLF line endings', () => {
+        const text = "# /// script\r\n# requires-python = \">=3.11\"\r\n# ///\r\n";
+        const result = parsePep723Metadata(text);
+        assert.notStrictEqual(result, null);
+        assert.strictEqual(result!.requiresPython, '>=3.11');
+    });
+
+    test('handles closing delimiter at end of file with no trailing newline', () => {
+        const text = "# /// script\n# requires-python = \">=3.11\"\n# ///";
+        const result = parsePep723Metadata(text);
+        assert.notStrictEqual(result, null);
+        assert.strictEqual(result!.requiresPython, '>=3.11');
     });
 });

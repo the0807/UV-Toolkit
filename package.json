@@ -44,7 +44,8 @@
     "onCommand:uv.installTool",
     "onCommand:uv.runTool",
     "onCommand:uv.add",
-    "onCommand:uv.addDev"
+    "onCommand:uv.addDev",
+    "onCommand:uv.setPep723Interpreter"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -160,6 +161,10 @@
       {
         "command": "uv.addDev",
         "title": "UV: Add Dev Package to Project"
+      },
+      {
+        "command": "uv.setPep723Interpreter",
+        "title": "UV: Set Interpreter for PEP 723 Script"
       }
     ],
     "menus": {
@@ -626,6 +631,25 @@
         "inputSchema": {
           "type": "object",
           "properties": {}
+        }
+      },
+      {
+        "name": "set_pep723_interpreter",
+        "displayName": "Set PEP 723 Interpreter",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uv-pep723",
+        "icon": "$(python)",
+        "userDescription": "Automatically set the Python interpreter based on PEP 723 script metadata",
+        "modelDescription": "Reads a Python script's PEP 723 inline metadata (# /// script block) to find the required Python version, then sets the VS Code Python interpreter accordingly. Use when the user wants to configure the interpreter for a PEP 723 script, or mentions inline script dependencies.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "scriptPath": {
+              "type": "string",
+              "description": "Relative path to the Python script file (required)"
+            }
+          },
+          "required": ["scriptPath"]
         }
       }
     ]
