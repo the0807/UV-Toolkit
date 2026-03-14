@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { execFile } from 'child_process';
-import { getInstallScript } from './utils';
+import { getInstallOptions } from './utils';
 
 // Prevents repeated prompts within the same VS Code session
 let prompted = false;
@@ -26,21 +26,29 @@ export function isUvInstalled(): Promise<boolean> {
 }
 
 /**
- * Opens a terminal and runs the platform-specific install script.
- * Shows an info message offering to restart the window when done.
+ * Shows a QuickPick with platform-specific installation methods and runs the selected one.
  */
 export async function installUv(): Promise<void> {
-    const script = getInstallScript(process.platform);
-    if (!script) {
+    const options = getInstallOptions(process.platform);
+
+    if (options.length === 0) {
         vscode.window.showWarningMessage(
             'Unsupported platform. Install uv manually: https://docs.astral.sh/uv/'
         );
         return;
     }
 
+    const selected = await vscode.window.showQuickPick(options, {
+        placeHolder: 'Select an installation method for uv',
+    });
+
+    if (!selected) {
+        return;
+    }
+
     const terminal = vscode.window.createTerminal('uv Installer');
     terminal.show();
-    terminal.sendText(script);
+    terminal.sendText(selected.command);
 
     const selection = await vscode.window.showInformationMessage(
         'uv installation started. Restart window when complete.',

@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { buildVersionSpec, buildDiagnosticsFromText, buildLockCommand, buildUpgradeCommand, parsePep723Metadata, getInstallScript } from '../utils';
+import { buildVersionSpec, buildDiagnosticsFromText, buildLockCommand, buildUpgradeCommand, parsePep723Metadata, getInstallScript, getInstallOptions } from '../utils';
 
 suite('buildVersionSpec', () => {
     test('adds == to bare version number without operator', () => {
@@ -178,5 +178,31 @@ suite('getInstallScript', () => {
 
     test('returns null on unsupported platform', () => {
         assert.strictEqual(getInstallScript('freebsd'), null);
+    });
+});
+
+suite('getInstallOptions', () => {
+    test('darwin includes brew, shell script, and cargo', () => {
+        const options = getInstallOptions('darwin');
+        const labels = options.map(o => o.label);
+        assert.deepStrictEqual(labels, ['Homebrew', 'Shell Script', 'Cargo']);
+    });
+
+    test('linux includes shell script and cargo', () => {
+        const options = getInstallOptions('linux');
+        const labels = options.map(o => o.label);
+        assert.deepStrictEqual(labels, ['Shell Script', 'Cargo']);
+    });
+
+    test('win32 includes winget, powershell script, and cargo', () => {
+        const options = getInstallOptions('win32');
+        const labels = options.map(o => o.label);
+        assert.deepStrictEqual(labels, ['winget', 'PowerShell Script', 'Cargo']);
+    });
+
+    test('unsupported platform returns only cargo', () => {
+        const options = getInstallOptions('freebsd');
+        assert.strictEqual(options.length, 1);
+        assert.strictEqual(options[0].label, 'Cargo');
     });
 });

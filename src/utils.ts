@@ -115,9 +115,42 @@ export function parseDependencyNames(pyprojectText: string): string[] {
     return names;
 }
 
+export interface InstallOption {
+    label: string;
+    command: string;
+    detail: string;
+}
+
+export function getInstallOptions(platform: string): InstallOption[] {
+    const options: InstallOption[] = [];
+
+    if (platform === 'darwin') {
+        options.push(
+            { label: 'Homebrew', command: 'brew install uv', detail: 'Install via Homebrew package manager' },
+            { label: 'Shell Script', command: 'curl -LsSf https://astral.sh/uv/install.sh | sh', detail: 'Official standalone installer' }
+        );
+    } else if (platform === 'linux') {
+        options.push(
+            { label: 'Shell Script', command: 'curl -LsSf https://astral.sh/uv/install.sh | sh', detail: 'Official standalone installer' }
+        );
+    } else if (platform === 'win32') {
+        options.push(
+            { label: 'winget', command: 'winget install astral-sh.uv', detail: 'Install via Windows Package Manager' },
+            { label: 'PowerShell Script', command: 'powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"', detail: 'Official standalone installer' }
+        );
+    }
+
+    options.push(
+        { label: 'Cargo', command: 'cargo install uv', detail: 'Install via Rust package manager (requires Rust)' }
+    );
+
+    return options;
+}
+
 /**
  * Returns the platform-specific uv installation script command.
  * Returns null for unsupported platforms.
+ * @deprecated Use getInstallOptions() instead for multiple install method support.
  */
 export function getInstallScript(platform: string): string | null {
     if (platform === 'darwin' || platform === 'linux') {

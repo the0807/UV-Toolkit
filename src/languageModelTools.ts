@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { exec, execFile } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
-import { parsePep723Metadata } from './utils';
+import { parsePep723Metadata, getInstallOptions } from './utils';
 import { isUvInstalled, installUv } from './uvInstaller';
 
 // Tool parameter interfaces
@@ -1113,10 +1113,14 @@ export class InstallUvTool extends UVToolBase<InstallUvParams> {
                 ]);
             }
 
+            const options = getInstallOptions(process.platform);
+            const optionsList = options.map(o => `- ${o.label}: \`${o.command}\` (${o.detail})`).join('\n');
+
             await installUv();
+
             return new vscode.LanguageModelToolResult([
                 new vscode.LanguageModelTextPart(
-                    'uv installation started in terminal. Restart VS Code when complete.'
+                    `uv is not installed. Installation dialog opened with the following options:\n${optionsList}`
                 )
             ]);
         } catch (error: any) {
