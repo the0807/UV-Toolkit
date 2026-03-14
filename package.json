@@ -2,7 +2,7 @@
   "name": "uv-toolkit",
   "displayName": "UV Toolkit",
   "description": "Enhance your Python development experience with uv - the fast Python package manager. Provides syntax highlighting, package links, command integration, and more.",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "engines": {
     "vscode": "^1.70.0"
   },
@@ -668,6 +668,48 @@
         "inputSchema": {
           "type": "object",
           "properties": {}
+        }
+      },
+      {
+        "name": "remove_package",
+        "displayName": "Remove Package",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uv-remove",
+        "icon": "$(trash)",
+        "userDescription": "Remove a Python package from the project",
+        "modelDescription": "Remove a Python package from the project's dependencies in pyproject.toml using 'uv remove'. Use when the user wants to uninstall a package, mentions removing a dependency, or needs to delete a library from their project.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "packageName": {
+              "type": "string",
+              "description": "Name of the package to remove (required)"
+            }
+          },
+          "required": [
+            "packageName"
+          ]
+        }
+      },
+      {
+        "name": "search_package",
+        "displayName": "Search Package",
+        "canBeReferencedInPrompt": true,
+        "toolReferenceName": "uv-search",
+        "icon": "$(search)",
+        "userDescription": "Search for a Python package on PyPI",
+        "modelDescription": "Search for a Python package on PyPI and return its information including latest version and description. Use when the user wants to find a package, check if a package exists, or get package details before adding it.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "packageName": {
+              "type": "string",
+              "description": "Name of the package to search for on PyPI (required)"
+            }
+          },
+          "required": [
+            "packageName"
+          ]
         }
       }
     ]

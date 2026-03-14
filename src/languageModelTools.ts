@@ -82,6 +82,14 @@ export interface SetPep723InterpreterParams {
     scriptPath: string;
 }
 
+export interface RemovePackageParams {
+    packageName: string;
+}
+
+export interface SearchPackageParams {
+    packageName: string;
+}
+
 export interface InstallUvParams {
     // No parameters needed
 }
@@ -1129,6 +1137,93 @@ export class InstallUvTool extends UVToolBase<InstallUvParams> {
     }
 }
 
+export class RemovePackageTool extends UVToolBase<RemovePackageParams> {
+    prepareInvocation(
+        options: vscode.LanguageModelToolInvocationPrepareOptions<RemovePackageParams>,
+        _token: vscode.CancellationToken
+    ): vscode.ProviderResult<vscode.PreparedToolInvocation> {
+        const packageName = options.input.packageName;
+        return {
+            invocationMessage: `Removing package: ${packageName}`,
+            confirmationMessages: {
+                title: 'Remove Package',
+                message: new vscode.MarkdownString(`Remove **${packageName}** from dependencies?`)
+            }
+        };
+    }
+
+    async invoke(
+        options: vscode.LanguageModelToolInvocationOptions<RemovePackageParams>,
+        _token: vscode.CancellationToken
+    ): Promise<vscode.LanguageModelToolResult> {
+        try {
+            const { packageName } = options.input;
+            const cwd = await this.selectWorkingDirectory();
+
+            return new Promise((resolve, reject) => {
+                exec(`uv remove ${packageName}`, { cwd }, (error, stdout, stderr) => {
+                    if (error) {
+                        reject(new Error(`Failed to remove package: ${stderr || error.message}`));
+                        return;
+                    }
+                    resolve(new vscode.LanguageModelToolResult([
+                        new vscode.LanguageModelTextPart(
+                            `Successfully removed ${packageName} from dependencies.\n${stdout}`
+                        )
+                    ]));
+                });
+            });
+        } catch (error: any) {
+            throw new Error(`Failed to remove package: ${error.message}`);
+        }
+    }
+}
+
+export class SearchPackageTool extends UVToolBase<SearchPackageParams> {
+    prepareInvocation(
+        options: vscode.LanguageModelToolInvocationPrepareOptions<SearchPackageParams>,
+        _token: vscode.CancellationToken
+    ): vscode.ProviderResult<vscode.PreparedToolInvocation> {
+        return {
+            invocationMessage: `Searching PyPI for: ${options.input.packageName}`,
+        };
+    }
+
+    async invoke(
+        options: vscode.LanguageModelToolInvocationOptions<SearchPackageParams>,
+        _token: vscode.CancellationToken
+    ): Promise<vscode.LanguageModelToolResult> {
+        try {
+            const { packageName } = options.input;
+            const response = await fetch(`https://pypi.org/pypi/${packageName}/json`);
+
+            if (response.status === 404) {
+                return new vscode.LanguageModelToolResult([
+                    new vscode.LanguageModelTextPart(`Package "${packageName}" not found on PyPI.`)
+                ]);
+            }
+
+            if (!response.ok) {
+                throw new Error(`PyPI API error: ${response.statusText}`);
+            }
+
+            const data = await response.json() as any;
+            const info = data.info;
+
+            return new vscode.LanguageModelToolResult([
+                new vscode.LanguageModelTextPart(
+                    `**${info.name}** (${info.version})\n` +
+                    `${info.summary || 'No description'}\n` +
+                    `License: ${info.license || 'Unknown'}\n` +
+                    `PyPI: https://pypi.org/project/${info.name}/`
+                )
+            ]);
+        } catch (error: any) {
+            throw new Error(`Failed to search package: ${error.message}`);
+        }
+    }
+}
+
 // Registration function
 export function registerLanguageModelTools(context: vscode.ExtensionContext) {
     try {
@@ -1149,6 +1244,8 @@ export function registerLanguageModelTools(context: vscode.ExtensionContext) {
         context.subscriptions.push(vscode.lm.registerTool('activate_venv', new ActivateVirtualEnvTool()));
         context.subscriptions.push(vscode.lm.registerTool('set_pep723_interpreter', new SetPep723InterpreterTool()));
         context.subscriptions.push(vscode.lm.registerTool('install_uv', new InstallUvTool()));
+        context.subscriptions.push(vscode.lm.registerTool('remove_package', new RemovePackageTool()));
+        context.subscriptions.push(vscode.lm.registerTool('search_package', new SearchPackageTool()));
     } catch (error) {
         console.warn('Failed to register some language model tools:', error);
     }

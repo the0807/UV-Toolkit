@@ -4,6 +4,20 @@ All notable changes to the "uv-toolkit" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.9] - 2026-03-14
+
+### Added
+- **Multiple uv installation methods**: Platform-aware QuickPick UI for installing uv (#7)
+  - macOS: Homebrew, Shell Script, Cargo
+  - Windows: winget, PowerShell Script, Cargo
+  - Linux: Shell Script, Cargo
+- **Copilot `#uv-remove` tool**: Remove packages from dependencies via natural language
+- **Copilot `#uv-search` tool**: Search for packages on PyPI via natural language
+
+### Improved
+- `UV: Install uv` command now shows a QuickPick with multiple installation options instead of running a single script
+- Updated README with new Copilot tools and installation methods
+
 ## [0.1.8] - 2026-03-03
 
 ### Added

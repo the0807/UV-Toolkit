@@ -46,6 +46,8 @@ UV Toolkit integrates seamlessly with VS Code Copilot's agent mode, allowing you
 | `#uv-activate-venv` | Activate virtual environment | "Activate the virtual environment" |
 | `#uv-pep723` | Set Python interpreter for PEP 723 script | "Set the interpreter for my script.py" |
 | `#uv-install` | Install uv package manager | "Install uv on my machine" |
+| `#uv-remove` | Remove a package from the project | "Remove the requests package from my project" |
+| `#uv-search` | Search for a package on PyPI | "Search for the flask package on PyPI" |
 
 #### Example Conversations with Copilot:
 
@@ -55,8 +57,14 @@ UV Toolkit integrates seamlessly with VS Code Copilot's agent mode, allowing you
 **User:** "Add pandas and numpy to my data science project"  
 **Copilot:** I'll add those packages to your project. *[Uses #uv-add tool]*
 
-**User:** "My dependencies are out of sync, can you fix that?"  
+**User:** "My dependencies are out of sync, can you fix that?"
 **Copilot:** I'll sync your project dependencies. *[Uses #uv-sync tool]*
+
+**User:** "Remove flask from my project"
+**Copilot:** I'll remove flask from your dependencies. *[Uses #uv-remove tool]*
+
+**User:** "Search for a package called httpx on PyPI"
+**Copilot:** I'll look that up for you. *[Uses #uv-search tool]*
 
 ### ⚡ Auto uv Installer
 
@@ -64,7 +72,7 @@ When the extension activates, it automatically checks whether `uv` is installed.
 
 * **Auto-detection on startup** — prompts once per session if uv is missing
 * **Manual install** — run `UV: Install uv` from the Command Palette at any time
-* **Platform-specific scripts** — uses the official Astral install script for macOS/Linux and PowerShell for Windows
+* **Multiple install methods** — choose from platform-aware options: Homebrew (macOS), winget (Windows), Cargo (cross-platform), or official install scripts
 * **Restart suggestion** — after installation starts, a notification offers to reload the window
 
 ### 🐍 PEP 723 Interpreter Selection
@@ -146,7 +154,15 @@ Right-click on pyproject.toml files in the explorer or editor to access UV comma
 You can install uv using one of the following methods:
 
 <details>
-<summary><b>macOS / Linux</b></summary>
+<summary><b>macOS (Homebrew)</b></summary>
+
+```bash
+brew install uv
+```
+</details>
+
+<details>
+<summary><b>macOS / Linux (Shell Script)</b></summary>
 
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -154,10 +170,26 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 </details>
 
 <details>
-<summary><b>Windows</b></summary>
+<summary><b>Windows (winget)</b></summary>
+
+```powershell
+winget install astral-sh.uv
+```
+</details>
+
+<details>
+<summary><b>Windows (PowerShell Script)</b></summary>
 
 ```powershell
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+</details>
+
+<details>
+<summary><b>Using Cargo</b></summary>
+
+```bash
+cargo install uv
 ```
 </details>
 
@@ -261,7 +293,7 @@ This extension doesn't have any specific settings.
 <summary><b>🧹 Miscellaneous</b></summary>
 
 * **UV: Clean Cache**: Clean the uv cache.
-* **UV: Install uv**: Install the uv package manager. Checks if uv is already installed and, if not, runs the official platform-specific install script in a terminal.
+* **UV: Install uv**: Install the uv package manager. Checks if uv is already installed and, if not, shows a QuickPick with platform-aware installation methods (Homebrew, winget, Cargo, or official scripts).
 * **UV: Set Interpreter for PEP 723 Script**: Manually trigger PEP 723 interpreter detection for the active Python script.
 </details>
 
