@@ -3,6 +3,7 @@
 **UV Toolkit** is a Visual Studio Code extension that enhances your experience when working with [uv](https://github.com/astral-sh/uv), a Python package manager.
 
 [![Install from VS Code Marketplace](https://img.shields.io/badge/Install-VS%20Code%20Marketplace-blue.svg)](https://marketplace.visualstudio.com/items?itemName=the0807.uv-toolkit)
+[![Install from Open VSX](https://img.shields.io/badge/Install-Open%20VSX-purple.svg)](https://open-vsx.org/extension/the0807/uv-toolkit)
 
 ## 📝 Overview
 
