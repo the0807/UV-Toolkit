@@ -180,11 +180,11 @@ abstract class UVToolBase<T> implements vscode.LanguageModelTool<T> {
         terminal.show();
         
         // Change to the working directory explicitly and then run the command
-        // Use PowerShell compatible commands since we're on Windows
-        const cdCommand = `Set-Location "${cwd}"`;
-        const pwdCommand = `Write-Host "Working directory: $(Get-Location)"`;
+        const isWindows = process.platform === 'win32';
+        const cdCommand = isWindows ? `Set-Location "${cwd}"` : `cd "${cwd}"`;
+        const pwdCommand = isWindows ? `Write-Host "Working directory: $(Get-Location)"` : `echo "Working directory: $(pwd)"`;
         const fullCommand = `${cdCommand}; ${pwdCommand}; ${command}`;
-        
+
         terminal.sendText(fullCommand);
     }
 

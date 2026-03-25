@@ -4,6 +4,12 @@ All notable changes to the "uv-toolkit" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.10] - 2026-03-25
+
+### Fixed
+- **Cross-platform Copilot tools**: Fix `createTerminalAndRun` using PowerShell-only commands (`Set-Location`, `Write-Host`) on all platforms (#8)
+  - Now uses `cd` and `echo` on macOS/Linux, PowerShell commands only on Windows
+
 ## [0.1.9] - 2026-03-14
 
 ### Added
