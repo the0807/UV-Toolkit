@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
+import * as os from 'os';
 import { execFile } from 'child_process';
-import { parsePep723Metadata } from './utils';
+import { parsePep723Metadata, buildUvExecEnv } from './utils';
 
 // Cache processed files to avoid re-running on every editor switch.
 // Cleared on save so updated PEP 723 metadata is picked up.
@@ -49,7 +50,8 @@ async function setInterpreterForPep723(
     requiresPython: string
 ): Promise<void> {
     return new Promise<void>((resolve) => {
-        execFile('uv', ['python', 'find', requiresPython], (error, stdout, stderr) => {
+        const env = buildUvExecEnv(process.env, process.platform, os.homedir());
+        execFile('uv', ['python', 'find', requiresPython], { env }, (error, stdout, stderr) => {
             if (error) {
                 if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
                     vscode.window.showErrorMessage('uv is not installed or not in PATH.');

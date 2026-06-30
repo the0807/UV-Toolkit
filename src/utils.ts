@@ -16,11 +16,36 @@ export function buildVersionSpec(packageName: string, version: string | undefine
 }
 
 /**
+ * Normalizes a package name per PEP 503 so names that differ only in case or
+ * in their use of "-", "_" or "." separators compare as equal.
+ */
+export function normalizePackageName(name: string): string {
+    return name.toLowerCase().replace(/[-_.]+/g, '-');
+}
+
+/**
+ * Extracts the package names declared in a uv.lock file (the `name = "..."`
+ * entries under each [[package]] table).
+ */
+export function parseLockPackageNames(lockText: string): string[] {
+    const names: string[] = [];
+    const regex = /^name = "([^"]+)"/gm;
+    let match;
+    while ((match = regex.exec(lockText)) !== null) {
+        names.push(match[1]);
+    }
+    return names;
+}
+
+/**
  * Returns the list of dependency names from pyproject.toml that are missing from uv.lock.
+ * Comparison is done on normalized package names against the lock file's declared
+ * packages, so a dependency is not falsely matched by an unrelated substring.
  */
 export function buildDiagnosticsFromText(pyprojectText: string, lockText: string): string[] {
     const depNames = parseDependencyNames(pyprojectText);
-    return depNames.filter(dep => !lockText.includes(dep));
+    const locked = new Set(parseLockPackageNames(lockText).map(normalizePackageName));
+    return depNames.filter(dep => !locked.has(normalizePackageName(dep)));
 }
 
 /**
@@ -124,12 +149,7 @@ export interface InstallOption {
 export function getInstallOptions(platform: string): InstallOption[] {
     const options: InstallOption[] = [];
 
-    if (platform === 'darwin') {
-        options.push(
-            { label: 'Homebrew', command: 'brew install uv', detail: 'Install via Homebrew package manager' },
-            { label: 'Shell Script', command: 'curl -LsSf https://astral.sh/uv/install.sh | sh', detail: 'Official standalone installer' }
-        );
-    } else if (platform === 'linux') {
+    if (platform === 'darwin' || platform === 'linux') {
         options.push(
             { label: 'Homebrew', command: 'brew install uv', detail: 'Install via Homebrew package manager' },
             { label: 'Shell Script', command: 'curl -LsSf https://astral.sh/uv/install.sh | sh', detail: 'Official standalone installer' }
@@ -161,4 +181,36 @@ export function getInstallScript(platform: string): string | null {
         return 'powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"';
     }
     return null;
+}
+
+/**
+ * Builds an environment for spawning uv programmatically (via exec/execFile).
+ *
+ * When VS Code is launched from a GUI it does not inherit the user's shell PATH,
+ * so uv installed via Homebrew or cargo is invisible to a bare `exec('uv ...')`.
+ * This prepends the common install locations to PATH so background uv invocations
+ * match what the integrated terminal can see. Windows is left untouched.
+ */
+export function buildUvExecEnv(
+    env: NodeJS.ProcessEnv,
+    platform: NodeJS.Platform,
+    homeDir: string
+): NodeJS.ProcessEnv {
+    if (platform === 'win32') {
+        return env;
+    }
+
+    const extraDirs = [
+        '/opt/homebrew/bin',
+        '/usr/local/bin',
+        '/home/linuxbrew/.linuxbrew/bin',
+        `${homeDir}/.cargo/bin`,
+        `${homeDir}/.local/bin`,
+    ];
+
+    const existing = (env.PATH || '').split(':').filter(Boolean);
+    const seen = new Set(existing);
+    const prepend = extraDirs.filter(dir => !seen.has(dir));
+
+    return { ...env, PATH: [...prepend, ...existing].join(':') };
 }

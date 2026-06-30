@@ -107,9 +107,6 @@ export function registerLinkProvider(context: vscode.ExtensionContext) {
                 }
             }
             
-            // For debugging
-            console.log(`Found ${links.length} links in pyproject.toml`);
-            
             return links;
         }
     };

@@ -1,17 +1,22 @@
 import * as vscode from 'vscode';
 import { exec } from 'child_process';
+import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
-import { buildVersionSpec, buildLockCommand, buildUpgradeCommand, parseDependencyNames } from './utils';
+import { buildVersionSpec, buildLockCommand, buildUpgradeCommand, parseDependencyNames, buildUvExecEnv } from './utils';
+
+function uvEnv(): NodeJS.ProcessEnv {
+    return buildUvExecEnv(process.env, process.platform, os.homedir());
+}
 
 function runCommand(cmd: string) {
     vscode.window.showInformationMessage(`Running: ${cmd}`);
-    exec(cmd, (error, stdout, stderr) => {
+    exec(cmd, { env: uvEnv() }, (error, stdout, stderr) => {
         if (error) {
-            vscode.window.showErrorMessage(`Error: ${stderr}`);
+            vscode.window.showErrorMessage(`Error: ${stderr || error.message}`);
             return;
         }
-        vscode.window.showInformationMessage(stdout);
+        vscode.window.showInformationMessage(stdout.trim() || `Done: ${cmd}`);
     });
 }
 
@@ -19,7 +24,7 @@ export function registerCommands(context: vscode.ExtensionContext) {
     const commands = [
         { command: 'uv.init', callback: initProject },
         { command: 'uv.sync', callback: syncDependencies },
-        { command: 'uv.upgrade', callback: () => runCommand('uv pip install --upgrade') },
+        { command: 'uv.upgrade', callback: () => runCommand('uv sync --upgrade') },
         { command: 'uv.cache.clean', callback: () => runCommand('uv cache clean') },
         { command: 'uv.generateLock', callback: generateLockFile },
         { command: 'uv.upgradeDependencies', callback: upgradeDependencies },
@@ -57,7 +62,7 @@ async function initProject() {
         value: path.basename(workspaceRoot)
     });
     
-    if (!projectName) return;
+    if (!projectName) {return;}
     
     // Show terminal and run the command
     const terminal = vscode.window.createTerminal('UV Init Project');
@@ -84,7 +89,7 @@ async function syncDependencies() {
         placeHolder: 'Select sync options'
     });
 
-    if (!options) return;
+    if (!options) {return;}
 
     let command = 'uv sync';
     
@@ -107,7 +112,7 @@ async function syncDependencies() {
             placeHolder: 'Select a requirements file'
         });
         
-        if (!selectedFile) return;
+        if (!selectedFile) {return;}
         
         command += ` ${selectedFile}`;
     } else if (options.label === 'Sync specific groups') {
@@ -146,7 +151,7 @@ async function addPackageToProject() {
         prompt: 'Enter the package name to add'
     });
     
-    if (!packageName) return;
+    if (!packageName) {return;}
     
     // Ask for package version (optional)
     const packageVersion = await vscode.window.showInputBox({
@@ -190,7 +195,7 @@ async function addDevPackageToProject() {
         prompt: 'Enter the package name to add as a dev dependency'
     });
     
-    if (!packageName) return;
+    if (!packageName) {return;}
     
     // Ask for package version (optional)
     const packageVersion = await vscode.window.showInputBox({
@@ -246,7 +251,7 @@ async function addScriptDependency() {
         placeHolder: 'Select a Python script'
     });
     
-    if (!selectedScript) return;
+    if (!selectedScript) {return;}
     
     // Ask for package name
     const packageName = await vscode.window.showInputBox({
@@ -254,7 +259,7 @@ async function addScriptDependency() {
         prompt: 'Enter the package name to add as a dependency'
     });
     
-    if (!packageName) return;
+    if (!packageName) {return;}
     
     // Show terminal and run the command
     const terminal = vscode.window.createTerminal('UV Add Script Dependency');
@@ -270,7 +275,7 @@ async function installPython() {
         prompt: 'Enter Python version to install'
     });
     
-    if (!pythonVersion) return;
+    if (!pythonVersion) {return;}
     
     // Show terminal and run the command
     const terminal = vscode.window.createTerminal('UV Python Install');
@@ -292,7 +297,7 @@ async function pinPython() {
         prompt: 'Enter Python version to pin'
     });
     
-    if (!pythonVersion) return;
+    if (!pythonVersion) {return;}
     
     // Show terminal and run the command
     const terminal = vscode.window.createTerminal('UV Python Pin');
@@ -308,7 +313,7 @@ async function installTool() {
         prompt: 'Enter the name of the tool to install'
     });
     
-    if (!toolName) return;
+    if (!toolName) {return;}
     
     // Show terminal and run the command
     const terminal = vscode.window.createTerminal('UV Tool Install');
@@ -324,7 +329,7 @@ async function runTool() {
         prompt: 'Enter the name of the tool to run'
     });
     
-    if (!toolName) return;
+    if (!toolName) {return;}
     
     // Ask for tool arguments
     const toolArgs = await vscode.window.showInputBox({
@@ -362,7 +367,7 @@ async function upgradeDependencies() {
         placeHolder: 'Select upgrade options'
     });
 
-    if (!options) return;
+    if (!options) {return;}
 
     let command: string;
 
@@ -379,7 +384,7 @@ async function upgradeDependencies() {
             placeHolder: 'Select a package to upgrade'
         });
 
-        if (!selectedPackage) return;
+        if (!selectedPackage) {return;}
 
         command = buildUpgradeCommand('specific', selectedPackage);
     } else {
@@ -394,7 +399,7 @@ async function upgradeDependencies() {
     }, async (progress) => {
         try {
             await new Promise<void>((resolve, reject) => {
-                exec(command, { cwd: workspaceRoot }, (error, stdout, stderr) => {
+                exec(command, { cwd: workspaceRoot, env: uvEnv() }, (error, stdout, stderr) => {
                     if (error) {
                         reject(new Error(stderr));
                         return;
@@ -428,7 +433,7 @@ async function manageVirtualEnv() {
         placeHolder: 'Select virtual environment options'
     });
 
-    if (!options) return;
+    if (!options) {return;}
 
     let command = 'uv venv';
     
@@ -452,7 +457,7 @@ async function manageVirtualEnv() {
         try {
             // Run uv venv command to create virtual environment
             await new Promise<void>((resolve, reject) => {
-                exec(command, { cwd: workspaceRoot }, (error, stdout, stderr) => {
+                exec(command, { cwd: workspaceRoot, env: uvEnv() }, (error, stdout, stderr) => {
                     if (error) {
                         reject(new Error(stderr));
                         return;
@@ -496,7 +501,7 @@ async function runScript() {
         placeHolder: 'Select a Python script to run'
     });
     
-    if (!selectedScript) return;
+    if (!selectedScript) {return;}
     
     // Ask for Python version (optional)
     const usePythonVersion = await vscode.window.showQuickPick(['Use default Python', 'Specify Python version'], {
@@ -568,7 +573,7 @@ async function activateVirtualEnv() {
             placeHolder: 'No virtual environments found. What would you like to do?'
         });
 
-        if (!createVenv) return;
+        if (!createVenv) {return;}
 
         if (createVenv.label === 'Create new virtual environment') {
             // Create a new virtual environment first
@@ -610,7 +615,7 @@ async function activateVirtualEnv() {
             placeHolder: 'Select a virtual environment to activate'
         });
 
-        if (!selectedVenv) return;
+        if (!selectedVenv) {return;}
         selectedVenvPath = selectedVenv.description;
     }
 
@@ -665,7 +670,7 @@ async function generateLockFile() {
         placeHolder: 'Select compile options'
     });
 
-    if (!options) return;
+    if (!options) {return;}
 
     let command: string;
 
@@ -695,7 +700,7 @@ async function generateLockFile() {
     }, async (progress) => {
         try {
             await new Promise<void>((resolve, reject) => {
-                exec(command, { cwd: workspaceRoot }, (error, stdout, stderr) => {
+                exec(command, { cwd: workspaceRoot, env: uvEnv() }, (error, stdout, stderr) => {
                     if (error) {
                         reject(new Error(stderr));
                         return;

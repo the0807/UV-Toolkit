@@ -6,13 +6,13 @@ export function registerDiagnostics(context: vscode.ExtensionContext) {
     const diagnosticCollection = vscode.languages.createDiagnosticCollection('uv');
 
     async function refreshDiagnostics(document: vscode.TextDocument) {
-        if (!document.fileName.endsWith('pyproject.toml')) return;
+        if (!document.fileName.endsWith('pyproject.toml')) {return;}
 
         const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-        if (!workspaceFolder) return;
+        if (!workspaceFolder) {return;}
 
         const lockPath = vscode.Uri.joinPath(workspaceFolder.uri, 'uv.lock');
-        if (!fs.existsSync(lockPath.fsPath)) return;
+        if (!fs.existsSync(lockPath.fsPath)) {return;}
 
         const lockText = fs.readFileSync(lockPath.fsPath, 'utf-8');
         const missingDeps = buildDiagnosticsFromText(document.getText(), lockText);

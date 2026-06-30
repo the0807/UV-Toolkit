@@ -1,9 +1,14 @@
 import * as vscode from 'vscode';
 import { exec, execFile } from 'child_process';
+import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
-import { parsePep723Metadata, getInstallOptions } from './utils';
+import { parsePep723Metadata, getInstallOptions, buildUvExecEnv } from './utils';
 import { isUvInstalled, installUv } from './uvInstaller';
+
+function uvEnv(): NodeJS.ProcessEnv {
+    return buildUvExecEnv(process.env, process.platform, os.homedir());
+}
 
 // Tool parameter interfaces
 export interface InitProjectParams {
@@ -162,7 +167,7 @@ abstract class UVToolBase<T> implements vscode.LanguageModelTool<T> {
     protected async executeCommand(command: string, workingDir?: string): Promise<string> {
         const cwd = workingDir || await this.selectWorkingDirectory();
         return new Promise((resolve, reject) => {
-            exec(command, { cwd }, (error: any, stdout: any, stderr: any) => {
+            exec(command, { cwd, env: uvEnv() }, (error: any, stdout: any, stderr: any) => {
                 if (error) {
                     reject(new Error(`Command failed: ${stderr || error.message}`));
                     return;
@@ -315,8 +320,8 @@ export class AddPackageTool extends UVToolBase<AddPackageParams> {
         const { packageName, version, extras } = options.input;
         
         let packageSpec = packageName;
-        if (version) packageSpec += `==${version}`;
-        if (extras) packageSpec += `[${extras}]`;
+        if (version) {packageSpec += `==${version}`;}
+        if (extras) {packageSpec += `[${extras}]`;}
         
         return {
             invocationMessage: `Adding package: ${packageSpec}`,
@@ -342,8 +347,8 @@ export class AddPackageTool extends UVToolBase<AddPackageParams> {
             const { packageName, version, extras } = options.input;
             
             let command = `uv add ${packageName}`;
-            if (version) command += `==${version}`;
-            if (extras) command += `[${extras}]`;
+            if (version) {command += `==${version}`;}
+            if (extras) {command += `[${extras}]`;}
             
             await this.createTerminalAndRun(command, 'UV Add Package', selectedDir);
             
@@ -366,8 +371,8 @@ export class AddDevPackageTool extends UVToolBase<AddDevPackageParams> {
         const { packageName, version, extras } = options.input;
         
         let packageSpec = packageName;
-        if (version) packageSpec += `==${version}`;
-        if (extras) packageSpec += `[${extras}]`;
+        if (version) {packageSpec += `==${version}`;}
+        if (extras) {packageSpec += `[${extras}]`;}
         
         return {
             invocationMessage: `Adding dev package: ${packageSpec}`,
@@ -393,8 +398,8 @@ export class AddDevPackageTool extends UVToolBase<AddDevPackageParams> {
             const { packageName, version, extras } = options.input;
             
             let command = `uv add --dev ${packageName}`;
-            if (version) command += `==${version}`;
-            if (extras) command += `[${extras}]`;
+            if (version) {command += `==${version}`;}
+            if (extras) {command += `[${extras}]`;}
             
             await this.createTerminalAndRun(command, 'UV Add Dev Package', selectedDir);
             
@@ -450,7 +455,7 @@ export class UpgradePackagesTool extends UVToolBase<UpgradePackagesParams> {
                     throw new Error('pyproject.toml file not found.');
                 }
                 
-                const command = `uv pip compile pyproject.toml -o uv.lock --upgrade-package ${packageName}`;
+                const command = `uv sync --upgrade-package ${packageName}`;
                 await this.executeCommand(command);
                 
                 return new vscode.LanguageModelToolResult([
@@ -458,7 +463,7 @@ export class UpgradePackagesTool extends UVToolBase<UpgradePackagesParams> {
                 ]);
             } else {
                 // Upgrade all packages
-                const command = 'uv pip install --upgrade';
+                const command = 'uv sync --upgrade';
                 await this.createTerminalAndRun(command, 'UV Upgrade', selectedDir);
                 
                 return new vscode.LanguageModelToolResult([
@@ -1049,7 +1054,7 @@ export class SetPep723InterpreterTool extends UVToolBase<SetPep723InterpreterPar
             }
 
             const interpreterPath = await new Promise<string>((resolve, reject) => {
-                execFile('uv', ['python', 'find', metadata.requiresPython!], (error: any, stdout: any, stderr: any) => {
+                execFile('uv', ['python', 'find', metadata.requiresPython!], { env: uvEnv() }, (error: any, stdout: any, stderr: any) => {
                     if (error) {
                         if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
                             reject(new Error('uv is not installed or not in PATH.'));
@@ -1161,7 +1166,7 @@ export class RemovePackageTool extends UVToolBase<RemovePackageParams> {
             const cwd = await this.selectWorkingDirectory();
 
             return new Promise((resolve, reject) => {
-                exec(`uv remove ${packageName}`, { cwd }, (error, stdout, stderr) => {
+                exec(`uv remove ${packageName}`, { cwd, env: uvEnv() }, (error, stdout, stderr) => {
                     if (error) {
                         reject(new Error(`Failed to remove package: ${stderr || error.message}`));
                         return;

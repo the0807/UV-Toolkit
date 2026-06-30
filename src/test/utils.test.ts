@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { buildVersionSpec, buildDiagnosticsFromText, buildLockCommand, buildUpgradeCommand, parsePep723Metadata, getInstallScript, getInstallOptions } from '../utils';
+import { buildVersionSpec, buildDiagnosticsFromText, buildLockCommand, buildUpgradeCommand, parsePep723Metadata, getInstallScript, getInstallOptions, buildUvExecEnv } from '../utils';
 
 suite('buildVersionSpec', () => {
     test('adds == to bare version number without operator', () => {
@@ -92,6 +92,54 @@ name = "my-project"
 `;
         const missing = buildDiagnosticsFromText(pyprojectText, '');
         assert.deepStrictEqual(missing, []);
+    });
+
+    test('does not treat a substring of another locked package as present', () => {
+        const pyprojectText = `
+[project]
+dependencies = [
+    "requests>=2.0.0",
+]
+`;
+        // "requests" appears only as a substring of "requests-toolbelt"
+        const lockText = 'name = "requests-toolbelt"';
+        const missing = buildDiagnosticsFromText(pyprojectText, lockText);
+        assert.deepStrictEqual(missing, ['requests']);
+    });
+
+    test('matches names that differ only in separators or case (PEP 503)', () => {
+        const pyprojectText = `
+[project]
+dependencies = [
+    "ruamel_yaml",
+    "Flask-SQLAlchemy",
+]
+`;
+        const lockText = 'name = "ruamel-yaml"\nname = "flask-sqlalchemy"';
+        const missing = buildDiagnosticsFromText(pyprojectText, lockText);
+        assert.deepStrictEqual(missing, []);
+    });
+});
+
+suite('buildUvExecEnv', () => {
+    test('prepends common install dirs to PATH on non-Windows', () => {
+        const env = buildUvExecEnv({ PATH: '/usr/bin' }, 'darwin', '/home/me');
+        const dirs = (env.PATH || '').split(':');
+        assert.ok(dirs.includes('/opt/homebrew/bin'));
+        assert.ok(dirs.includes('/home/me/.cargo/bin'));
+        assert.strictEqual(dirs[dirs.length - 1], '/usr/bin');
+    });
+
+    test('does not duplicate dirs already on PATH', () => {
+        const env = buildUvExecEnv({ PATH: '/opt/homebrew/bin:/usr/bin' }, 'linux', '/home/me');
+        const occurrences = (env.PATH || '').split(':').filter(d => d === '/opt/homebrew/bin');
+        assert.strictEqual(occurrences.length, 1);
+    });
+
+    test('leaves env untouched on Windows', () => {
+        const original = { PATH: 'C:\\Windows' };
+        const env = buildUvExecEnv(original, 'win32', 'C:\\Users\\me');
+        assert.strictEqual(env, original);
     });
 });
 

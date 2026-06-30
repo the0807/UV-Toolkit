@@ -27,7 +27,7 @@ export function registerPackageManager(context: vscode.ExtensionContext) {
         const selectedPackage = await vscode.window.showQuickPick(packages, {
             placeHolder: 'Select a package to remove'
         });
-        if (!selectedPackage) return;
+        if (!selectedPackage) {return;}
 
         const terminal = vscode.window.createTerminal('UV Remove Package');
         terminal.show();
@@ -51,7 +51,7 @@ export function registerPackageManager(context: vscode.ExtensionContext) {
             prompt: 'Enter package name to search on PyPI'
         });
 
-        if (!searchQuery) return;
+        if (!searchQuery) {return;}
 
         // Show progress while searching
         vscode.window.withProgress({
