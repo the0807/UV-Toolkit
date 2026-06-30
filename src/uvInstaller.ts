@@ -6,21 +6,43 @@ import { getInstallOptions } from './utils';
 let prompted = false;
 
 /**
- * Checks whether uv is available in PATH.
- * Resolves true if found, false on ENOENT (not installed), rejects on other errors.
+ * Checks whether uv is available.
+ *
+ * When VS Code is launched from a GUI (app icon / desktop launcher) it does not
+ * inherit the user's shell PATH, so tools installed via Homebrew (e.g.
+ * /home/linuxbrew/.linuxbrew/bin on Linux, /opt/homebrew/bin on Apple Silicon)
+ * or cargo (~/.cargo/bin) are invisible to a bare `execFile('uv', ...)`. To match
+ * what the integrated terminal sees, detection runs through a login shell on
+ * non-Windows platforms so rc/profile files (which set up brew/cargo PATH) load.
+ *
+ * Resolves true if found, false otherwise.
  */
 export function isUvInstalled(): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-        execFile('uv', ['--version'], (error) => {
-            if (!error) {
-                resolve(true);
-                return;
-            }
-            if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-                resolve(false);
-                return;
-            }
-            reject(error);
+    if (process.platform === 'win32') {
+        return new Promise((resolve, reject) => {
+            execFile('uv', ['--version'], (error) => {
+                if (!error) {
+                    resolve(true);
+                    return;
+                }
+                if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+                    resolve(false);
+                    return;
+                }
+                reject(error);
+            });
+        });
+    }
+
+    const shell = process.env.SHELL || '/bin/bash';
+    return new Promise((resolve) => {
+        // -l loads the login profile and -i loads interactive rc files
+        // (~/.bashrc, ~/.zshrc), where brew/cargo add their PATH entries.
+        // Detection is based on the shell exit code rather than stdout, because
+        // interactive rc files often print banners/MOTD to stdout, which would
+        // otherwise be mistaken for a successful `command -v` result.
+        execFile(shell, ['-lic', 'command -v uv >/dev/null 2>&1'], (error) => {
+            resolve(!error);
         });
     });
 }

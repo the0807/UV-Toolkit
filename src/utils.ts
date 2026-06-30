@@ -131,6 +131,7 @@ export function getInstallOptions(platform: string): InstallOption[] {
         );
     } else if (platform === 'linux') {
         options.push(
+            { label: 'Homebrew', command: 'brew install uv', detail: 'Install via Homebrew package manager' },
             { label: 'Shell Script', command: 'curl -LsSf https://astral.sh/uv/install.sh | sh', detail: 'Official standalone installer' }
         );
     } else if (platform === 'win32') {

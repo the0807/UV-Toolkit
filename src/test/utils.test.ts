@@ -188,10 +188,10 @@ suite('getInstallOptions', () => {
         assert.deepStrictEqual(labels, ['Homebrew', 'Shell Script', 'Cargo']);
     });
 
-    test('linux includes shell script and cargo', () => {
+    test('linux includes brew, shell script, and cargo', () => {
         const options = getInstallOptions('linux');
         const labels = options.map(o => o.label);
-        assert.deepStrictEqual(labels, ['Shell Script', 'Cargo']);
+        assert.deepStrictEqual(labels, ['Homebrew', 'Shell Script', 'Cargo']);
     });
 
     test('win32 includes winget, powershell script, and cargo', () => {
