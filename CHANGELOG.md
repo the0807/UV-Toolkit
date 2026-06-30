@@ -4,6 +4,16 @@ All notable changes to the "uv-toolkit" extension will be documented in this fil
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.11] - 2026-06-30
+
+### Fixed
+- **uv install detection on GUI launch**: The startup check now probes for `uv` through a login shell, so VS Code launched from the app icon/desktop (which doesn't inherit the shell `PATH`) detects uv installed via Homebrew or cargo instead of wrongly prompting to install it
+- **Upgrade commands**: `UV: Upgrade Packages` and the `#uv-upgrade` Copilot tool now run `uv sync --upgrade` (and `uv sync --upgrade-package` for a specific package) instead of the always-failing `uv pip install --upgrade` / outdated `uv pip compile` commands
+- **uv detection for background commands**: All programmatic uv invocations (PEP 723 interpreter lookup, lock/upgrade, Copilot tools) now resolve uv via the common Homebrew/cargo install paths, so GUI-launched VS Code no longer reports "uv is not installed" when it actually is
+- **Dependency diagnostics accuracy**: Missing-dependency warnings now compare normalized (PEP 503) package names against the lock file's actual entries, fixing false matches (e.g. `requests` matching `requests-toolbelt`) and missed matches across `-`/`_`/`.` and case differences
+- **Link provider**: Removed a leftover debug `console.log` that ran on every `pyproject.toml` open
+- **Test setup**: Fixed the broken `npm test` script (`vscode-test`) and declared the missing `@vscode/test-cli` dev dependency
+
 ## [0.1.10] - 2026-03-25
 
 ### Fixed
